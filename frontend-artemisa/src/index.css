@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paleta Artemisa Artesanal */
+  --color-artemisa-primary: #3d2314;    /* Marrón Cuero Oscuro / Grabado */
+  --color-artemisa-secondary: #8c5a3c;  /* Cuero Tostado Warm */
+  --color-artemisa-accent: #c48b5e;     /* Suela / Bronce Cálido */
+  --color-artemisa-neutral: #2b1d14;    /* Texto Principal Marrón Café */
+  --color-artemisa-light: #f9f6f0;      /* Fondo Lino / Beige Muy Claro */
+  --color-artemisa-border: #dbd1c5;     /* Bordes Suaves Hilo/Textil */
+}
+
+:root {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --swiper-theme-color: #8c5a3c;
+  --swiper-navigation-size: 20px;
+}
+
+body {
+  background-color: var(--color-artemisa-light);
+  color: var(--color-artemisa-neutral);
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Custom Swiper Controls estilo artesanal */
+.swiper-button-next, 
+.swiper-button-prev {
+  @apply bg-[#3d2314]/80 text-[#f9f6f0] backdrop-blur-sm p-6 rounded-full transition-all hover:bg-[#3d2314];
+}
+
+.swiper-pagination-bullet {
+  @apply bg-[#8c5a3c] opacity-40 transition-all;
+}
+
+.swiper-pagination-bullet-active {
+  @apply opacity-100 bg-[#3d2314] scale-125;
+}

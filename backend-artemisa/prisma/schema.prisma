@@ -1,0 +1,121 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Product {
+  id          Int              @id @default(autoincrement())
+  name        String
+  price       Float
+  description String?
+  images      String[]         // Guardaremos las URLs de las imágenes
+  isOffer     Boolean          @default(false)
+  offerPrice  Float?
+  categories  Category[]
+  variants    ProductVariant[]
+  orderItems  OrderItem[]
+}
+
+model ProductVariant {
+  id        Int         @id @default(autoincrement())
+  name      String  
+  stock     Int         @default(0)
+  price     Float?
+  size      String?     // Opcional (ej: "40x40", "Standard", "S")
+  color     String?     // Opcional (ej: "Tusor Beige", "Negro")
+  image     String?     // Opcional (URL de la foto de la variante)
+  product   Product     @relation(fields: [productId], references: [id])
+  productId Int
+  orderItems OrderItem[]
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  image    String?
+  products Product[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id       Int    @id @default(autoincrement())
+  email    String @unique  
+  password String
+  role     Role   @default(USER) 
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  // Datos del Comprador
+  customerName    String
+  customerEmail   String
+  customerPhone   String
+  
+  // Datos de Entrega / Envío
+  deliveryMethod  String      // "RETIRO" o "ENVIO"
+  address         String?     // Calle, Número, Piso (Opcional si es retiro)
+  city            String?     // Localidad
+  postalCode      String?     
+  notes           String?     // Notas aclaratorias del cliente
+
+  // Control Financiero y Estados
+  total           Float
+  status          String      @default("PENDIENTE") // PENDING, PREPARING, SHIPPED, COMPLETED, CANCELLED
+  paymentMethod   String      // "TRANSFERENCIA", "EFECTIVO", "MERCADOPAGO"
+  
+  // Integración de Pagos (Mercado Pago / Tarjetas)
+  preferenceId    String?     // ID de preferencia generado por Mercado Pago
+  paymentId       String?     // ID de transacción devuelto por Mercado Pago tras el pago
+  paymentStatus   String?     // approved, pending, rejected, etc.
+
+  items           OrderItem[]
+}
+
+model OrderItem {
+  id              Int             @id @default(autoincrement())
+  quantity        Int
+  priceAtPurchase Float          
+  order           Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         Int
+  product         Product         @relation(fields: [productId], references: [id])
+  productId       Int
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId       Int?
+}
+
+model Banner {
+  id        Int      @id @default(autoincrement())
+  title     String?  // Ej: "3 Cuotas sin interés"
+  imageUrl  String   // La URL de la imagen
+  link      String?  // A dónde lleva si hacés clic
+  active    Boolean  @default(true)
+  order     Int      @default(0) // Orden en el carrusel
+  createdAt DateTime @default(now())
+}
+
+model Promotion {
+  id            Int      @id @default(autoincrement())
+  name          String   // Ej: "Especial Textiles"
+  description   String?
+  type          String   // "CANTIDAD" o "PORCENTAJE"
+  minQuantity   Int      @default(1)
+  discountValue Float    
+  active        Boolean  @default(true)
+  
+  // Relación opcional
+  productId     Int?
+  categoryId    Int?
+}
