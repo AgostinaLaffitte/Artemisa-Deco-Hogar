@@ -61,7 +61,7 @@ export const UpdateProductPage = () => {
         
         if (p.categories?.length > 0) setSelectedCategory(String(p.categories[0].id));
         setVariants(p.variants?.length > 0 ? p.variants : [{ name: '', stock: 1, price: null }]);
-      } catch (error) {
+      } catch {
         setStatus({ type: 'error', message: 'Error al recuperar los datos del servidor.' });
       } finally {
         setPageLoading(false);
@@ -98,7 +98,7 @@ export const UpdateProductPage = () => {
       await api.patch(`/products/${productId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setStatus({ type: 'success', message: '¡Artículo actualizado con éxito!' });
       setTimeout(() => navigate('/admin/productos'), 1500);
-    } catch (error) {
+    } catch {
       setStatus({ type: 'error', message: 'Error de servidor al guardar la edición.' });
     } finally {
       setSubmitLoading(false);

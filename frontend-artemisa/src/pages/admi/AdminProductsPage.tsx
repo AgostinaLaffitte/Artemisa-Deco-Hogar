@@ -20,11 +20,6 @@ export const AdminProductsPage = () => {
     setTimeout(() => setNotification(null), 3500);
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  
 
   const fetchProducts = async () => {
     try {
@@ -38,6 +33,9 @@ export const AdminProductsPage = () => {
       setLoading(false);
     }
   };
+    useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const handleDeleteProduct = async (id: number) => {
     try {

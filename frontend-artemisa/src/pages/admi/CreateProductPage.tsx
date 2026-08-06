@@ -72,8 +72,9 @@ export const CreateProductPage = () => {
       await api.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       setStatus({ type: 'success', message: '¡Producto guardado con éxito!' });
       setTimeout(() => navigate('/admin/productos'), 1500);
-    } catch (error: any) {
-      setStatus({ type: 'error', message: 'Error al salvar el artículo.' });
+    } catch (err) {
+      console.error(err);
+      setStatus({ type: 'error', message: 'Error al guardar el producto. Intenta nuevamente.' });
     } finally {
       setLoading(false);
     }
