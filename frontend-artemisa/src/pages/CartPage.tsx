@@ -92,7 +92,14 @@ export const CartPage = () => {
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-artemisa-neutral text-sm truncate">{item.productName}</h4>
                     <p className="text-xs text-artemisa-secondary">{item.variantName}</p>
-                    <p className="text-sm font-black text-artemisa-neutral mt-1">{formatPrice(finalPrice)}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <p className="text-sm font-black text-artemisa-neutral">{formatPrice(finalPrice)}</p>
+                      {hasDiscount && (
+                        <p className="text-xs text-artemisa-secondary line-through font-semibold">
+                          {formatPrice(originalPrice)}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">
