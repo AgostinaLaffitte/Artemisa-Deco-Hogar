@@ -1,10 +1,11 @@
-import { Layers, Plus, Trash2 } from 'lucide-react';
+import { Layers, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 
 export interface LocalVariant {
   id?: number;
   name: string;
   stock: number;
   price: number | null;
+  image?: string | null;
 }
 
 interface VariantMatrixProps {
@@ -29,14 +30,14 @@ export const VariantMatrix = ({
         <button
           type="button"
           onClick={onAddVariant}
-          className="text-xs font-semibold text-artemisa-primary hover:text-artemisa-secondary flex items-center gap-1 bg-white hover:bg-artemisa-border px-3 py-1.5 rounded-lg border border-artemisa-border transition-all"
+          className="text-xs font-semibold text-artemisa-primary hover:text-artemisa-secondary flex items-center gap-1 bg-white hover:bg-artemisa-border px-3 py-1.5 rounded-lg border border-artemisa-border transition-all cursor-pointer"
         >
           <Plus size={14} /> Añadir
         </button>
       </div>
 
       <p className="text-[11px] text-artemisa-secondary">
-        Agregá variantes según medidas (ej. 1 Plaza, 2 Plazas) o tipo de tela/color.
+        Agregá variantes según medidas (ej. 1 Plaza, 2 Plazas) o tipo de tela/color y asignales su imagen opcional.
       </p>
 
       <div className="space-y-4">
@@ -60,15 +61,15 @@ export const VariantMatrix = ({
                 <button
                   type="button"
                   onClick={() => onRemoveVariant(index)}
-                  className="mt-6 p-2 text-artemisa-secondary hover:text-rose-700 transition-colors"
+                  className="mt-6 p-2 text-artemisa-secondary hover:text-rose-700 transition-colors cursor-pointer"
                 >
                   <Trash2 size={16} />
                 </button>
               )}
             </div>
 
-            {/* Stock y Precio */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Stock, Precio y URL de Imagen */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1">Stock Disponible</label>
                 <input
@@ -89,6 +90,19 @@ export const VariantMatrix = ({
                   value={variant.price || ''}
                   onChange={(e) => onVariantChange(index, 'price', e.target.value ? +e.target.value : null)}
                   className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-sm font-bold text-artemisa-primary outline-none focus:border-artemisa-secondary"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1 flex items-center gap-1">
+                  <ImageIcon size={12} /> Imagen (URL)
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://..."
+                  value={variant.image || ''}
+                  onChange={(e) => onVariantChange(index, 'image', e.target.value)}
+                  className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-xs outline-none focus:border-artemisa-secondary text-artemisa-neutral"
                 />
               </div>
             </div>

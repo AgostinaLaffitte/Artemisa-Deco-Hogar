@@ -2,7 +2,7 @@ import type { Category } from '../../types/category';
 
 interface GeneralInfoProps {
   isEditMode?: boolean;
-  productId: string;
+  productId?: string; // <-- Opcional para que no falle en CreateProductPage
   setProductId?: (val: string) => void;
   name: string;
   setName: (val: string) => void;
@@ -10,14 +10,14 @@ interface GeneralInfoProps {
   setPrice: (val: string) => void;
   description: string;
   setDescription: (val: string) => void;
-  selectedCategory: string;
-  setSelectedCategory: (val: string) => void;
+  selectedCategories: string[];
+  setSelectedCategories: (val: string[]) => void;
   categoriesList: Category[];
 }
 
 export const GeneralInfoSection = ({
   isEditMode = false,
-  productId,
+  productId = '',
   setProductId,
   name,
   setName,
@@ -25,10 +25,19 @@ export const GeneralInfoSection = ({
   setPrice,
   description,
   setDescription,
-  selectedCategory,
-  setSelectedCategory,
+  selectedCategories,
+  setSelectedCategories,
   categoriesList,
 }: GeneralInfoProps) => {
+
+  const handleCategoryToggle = (categoryId: string) => {
+    if (selectedCategories.includes(categoryId)) {
+      setSelectedCategories(selectedCategories.filter(id => id !== categoryId));
+    } else {
+      setSelectedCategories([...selectedCategories, categoryId]);
+    }
+  };
+
   return (
     <div className="bg-artemisa-border/30 rounded-2xl p-6 shadow-xs border border-artemisa-border space-y-4">
       <h3 className="text-sm font-serif font-bold text-artemisa-primary uppercase tracking-wider border-b border-artemisa-border pb-3">
@@ -36,25 +45,22 @@ export const GeneralInfoSection = ({
       </h3>
       
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-[10px] font-bold text-artemisa-secondary uppercase tracking-wider mb-1.5">
-            Código Único {isEditMode ? '(No editable)' : '*'}
-          </label>
-          <input
-            type="number"
-            required={!isEditMode}
-            disabled={isEditMode}
-            placeholder="Ej: 4001"
-            value={productId}
-            onChange={(e) => setProductId?.(e.target.value)}
-            className={`w-full border rounded-xl py-3 px-4 outline-none text-base sm:text-sm font-semibold transition-all ${
-              isEditMode 
-                ? 'border-artemisa-border bg-artemisa-border/40 text-artemisa-secondary/60 cursor-not-allowed' 
-                : 'border-artemisa-border bg-white text-artemisa-neutral focus:border-artemisa-secondary'
-            }`}
-          />
-        </div>
-        <div className="sm:col-span-2">
+        {isEditMode && (
+          <div>
+            <label className="block text-[10px] font-bold text-artemisa-secondary uppercase tracking-wider mb-1.5">
+              Código Único (ID)
+            </label>
+            <input
+              type="text"
+              disabled
+              value={productId}
+              onChange={(e) => setProductId?.(e.target.value)}
+              className="w-full border rounded-xl py-3 px-4 outline-none text-base sm:text-sm font-semibold border-artemisa-border bg-artemisa-border/40 text-artemisa-secondary/60 cursor-not-allowed"
+            />
+          </div>
+        )}
+
+        <div className={isEditMode ? 'sm:col-span-2' : 'sm:col-span-3'}>
           <label className="block text-[10px] font-bold text-artemisa-secondary uppercase tracking-wider mb-1.5">Nombre del Producto *</label>
           <input
             type="text"
@@ -80,18 +86,35 @@ export const GeneralInfoSection = ({
             className="w-full bg-white border border-artemisa-border rounded-xl py-3 px-4 outline-none focus:border-artemisa-secondary text-base sm:text-sm font-semibold text-artemisa-primary"
           />
         </div>
+
+        {/* Selección múltiple de categorías */}
         <div>
-          <label className="block text-[10px] font-bold text-artemisa-secondary uppercase tracking-wider mb-1.5">Categoría</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full bg-white border border-artemisa-border rounded-xl py-2.5 px-3 outline-none focus:border-artemisa-secondary text-sm font-medium text-artemisa-neutral"
-          >
-            <option value="">Seleccionar categoría...</option>
-            {categoriesList.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.name}</option>
-            ))}
-          </select>
+          <label className="block text-[10px] font-bold text-artemisa-secondary uppercase tracking-wider mb-1.5">
+            Categorías
+          </label>
+          <div className="flex flex-wrap gap-1.5 p-2 bg-white border border-artemisa-border rounded-xl min-h-[46px] items-center">
+            {categoriesList.length === 0 ? (
+              <span className="text-xs text-artemisa-secondary/60 px-2">Cargando categorías...</span>
+            ) : (
+              categoriesList.map(cat => {
+                const isSelected = selectedCategories.includes(String(cat.id));
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => handleCategoryToggle(String(cat.id))}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      isSelected
+                        ? 'bg-artemisa-primary text-white shadow-xs'
+                        : 'bg-artemisa-border/30 text-artemisa-neutral hover:bg-artemisa-border'
+                    }`}
+                  >
+                    {cat.name} {isSelected && '✓'}
+                  </button>
+                );
+              })
+            )}
+          </div>
         </div>
       </div>
 

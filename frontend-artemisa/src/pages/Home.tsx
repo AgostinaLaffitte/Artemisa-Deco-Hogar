@@ -83,34 +83,36 @@ export const Home = () => {
         </section>
       )}
 
-      {/* BANNER DE PROPUESTA DE VALOR / BENEFICIOS ARTESANALES */}
-      <section className="border-b border-artemisa-border bg-artemisa-border/30 py-6 px-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 text-center">
-          <div className="flex items-center justify-center gap-3">
-            <Scissors className="text-artemisa-secondary" size={20} />
-            <div className="text-left">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Trabajo Artesanal</h4>
-              <p className="text-[11px] text-artemisa-secondary">Atención en cada detalle y confección</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-center gap-3">
-            <ShieldCheck className="text-artemisa-secondary" size={20} />
-            <div className="text-left">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Materiales Seleccionados</h4>
-              <p className="text-[11px] text-artemisa-secondary">Telas resistentes de primera línea</p>
-            </div>
-          </div>
+     {/* BANNER DE PROPUESTA DE VALOR / BENEFICIOS ARTESANALES */}
+<section className="border-b border-artemisa-border bg-artemisa-border/30 py-6 px-4">
+  <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4">
+    
+    <div className="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-2 sm:gap-3">
+      <Scissors className="text-artemisa-secondary shrink-0" size={22} />
+      <div>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Trabajo Artesanal</h4>
+        <p className="text-[11px] text-artemisa-secondary">Atención en cada detalle y confección</p>
+      </div>
+    </div>
+    
+    <div className="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-2 sm:gap-3">
+      <ShieldCheck className="text-artemisa-secondary shrink-0" size={22} />
+      <div>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Materiales Seleccionados</h4>
+        <p className="text-[11px] text-artemisa-secondary">Telas resistentes de primera línea</p>
+      </div>
+    </div>
 
-          <div className="flex items-center justify-center gap-3">
-            <Truck className="text-artemisa-secondary" size={20} />
-            <div className="text-left">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Envíos Cuidados</h4>
-              <p className="text-[11px] text-artemisa-secondary">Empaquetado listo para disfrutar o regalar</p>
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-2 sm:gap-3">
+      <Truck className="text-artemisa-secondary shrink-0" size={22} />
+      <div>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Envíos Cuidados</h4>
+        <p className="text-[11px] text-artemisa-secondary">Empaquetado listo para disfrutar o regalar</p>
+      </div>
+    </div>
+
+  </div>
+</section>
 
       {/* CONTENIDO PRINCIPAL: CATEGORÍAS */}
       <main className="max-w-7xl mx-auto px-4 py-12 md:py-20 pb-28">

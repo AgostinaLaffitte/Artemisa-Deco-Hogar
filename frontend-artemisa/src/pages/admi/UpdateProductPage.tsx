@@ -26,7 +26,7 @@ export const UpdateProductPage = () => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [isOffer, setIsOffer] = useState(false);
   const [offerPrice, setOfferPrice] = useState('');
   const [existingImages, setExistingImages] = useState<string[]>([]);
@@ -39,7 +39,7 @@ export const UpdateProductPage = () => {
     setVariants,
     handleImageChange,
     removeNewImage,
-  } = useProductForm([]); // Inicializa vacío para esperar la API
+  } = useProductForm([]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -59,8 +59,21 @@ export const UpdateProductPage = () => {
         setOfferPrice(p.offerPrice ? String(p.offerPrice) : '');
         setExistingImages(p.images || []);
         
-        if (p.categories?.length > 0) setSelectedCategory(String(p.categories[0].id));
-        setVariants(p.variants?.length > 0 ? p.variants : [{ name: '', stock: 1, price: null }]);
+        if (p.categories?.length > 0) {
+          setSelectedCategories(p.categories.map((cat: any) => String(cat.id)));
+        }
+
+        if (p.variants?.length > 0) {
+          setVariants(p.variants.map((v: any) => ({
+            id: v.id,
+            name: v.name,
+            stock: v.stock,
+            price: v.price,
+            image: v.image || '',
+          })));
+        } else {
+          setVariants([{ name: '', stock: 1, price: null, image: '' }]);
+        }
       } catch {
         setStatus({ type: 'error', message: 'Error al recuperar los datos del servidor.' });
       } finally {
@@ -85,11 +98,17 @@ export const UpdateProductPage = () => {
       formData.append('description', description.trim());
       formData.append('isOffer', String(isOffer));
       formData.append('offerPrice', isOffer && offerPrice ? offerPrice : '');
-      if (selectedCategory) formData.append('categories[]', selectedCategory);
+      selectedCategories.forEach(catId => formData.append('categories[]', catId));
 
       const validVariants = variants
         .filter(v => v.name.trim() !== '')
-        .map(v => ({ id: v.id, name: v.name.trim(), stock: Number(v.stock), price: v.price ? Number(v.price) : null }));
+        .map(v => ({ 
+          id: v.id, 
+          name: v.name.trim(), 
+          stock: Number(v.stock), 
+          price: v.price ? Number(v.price) : null,
+          image: v.image || null
+        }));
       
       formData.append('variants', JSON.stringify(validVariants));
       existingImages.forEach(url => formData.append('images[]', url));
@@ -136,14 +155,14 @@ export const UpdateProductPage = () => {
             setPrice={setPrice}
             description={description}
             setDescription={setDescription}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
+            selectedCategories={selectedCategories}
+            setSelectedCategories={setSelectedCategories}
             categoriesList={categoriesList}
           />
 
           <VariantMatrix 
             variants={variants}
-            onAddVariant={() => setVariants(prev => [...prev, { name: '', stock: 1, price: null }])}
+            onAddVariant={() => setVariants(prev => [...prev, { name: '', stock: 1, price: null, image: '' }])}
             onRemoveVariant={(idx) => setVariants(prev => prev.filter((_, i) => i !== idx))}
             onVariantChange={(idx, field, val) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, [field]: val } : v))}
           />
