@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ChevronLeft, Minus, Plus, ShoppingBag, CheckCircle2, AlertCircle, MessageCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, Plus, ShoppingBag, CheckCircle2, AlertCircle, MessageCircle } from 'lucide-react';
 import { formatPrice } from '../utils/productUtils';
 import { ProductService } from '../services/product.service';
 import type { Product } from '../types/product';
@@ -40,8 +40,9 @@ export const ProductDetail = () => {
         const data = await ProductService.getById(productId);
         setProduct(data);
         
+        let initialImage = '';
         if (data.images && data.images.length > 0) {
-          setActiveImage(data.images[0]);
+          initialImage = data.images[0];
         }
 
         if (data.variants && data.variants.length > 0) {
@@ -49,8 +50,12 @@ export const ProductDetail = () => {
           setSelectedVariant(firstVariant);
           setSelectedSize(firstVariant.size || '');
           setSelectedColor(firstVariant.color || firstVariant.name);
-          if (firstVariant.image) setActiveImage(firstVariant.image);
+          if (firstVariant.image) {
+            initialImage = firstVariant.image;
+          }
         }
+
+        setActiveImage(initialImage);
 
         // Carga de productos similares
         if (data.categories && data.categories.length > 0) {
@@ -101,6 +106,29 @@ export const ProductDetail = () => {
     );
   }
 
+  // Lista consolidada de todas las imágenes disponibles (producto + variantes)
+  const productImages = product.images || [];
+  const variantImages = (product.variants || [])
+    .map((v) => v.image)
+    .filter((img): img is string => Boolean(img));
+  
+  // Unificamos y quitamos duplicados respetando el orden
+  const galleryImages = Array.from(new Set([...productImages, ...variantImages]));
+
+  const currentImageIndex = galleryImages.indexOf(activeImage);
+
+  const handlePrevImage = () => {
+    if (galleryImages.length === 0) return;
+    const nextIdx = currentImageIndex <= 0 ? galleryImages.length - 1 : currentImageIndex - 1;
+    setActiveImage(galleryImages[nextIdx]);
+  };
+
+  const handleNextImage = () => {
+    if (galleryImages.length === 0) return;
+    const nextIdx = currentImageIndex >= galleryImages.length - 1 ? 0 : currentImageIndex + 1;
+    setActiveImage(galleryImages[nextIdx]);
+  };
+
   const availableSizes = Array.from(
     new Set(product.variants.map((v) => v.size).filter(Boolean))
   ) as string[];
@@ -147,7 +175,7 @@ export const ProductDetail = () => {
       variantId: selectedVariant.id,
       variantName: selectedVariant.name,
       price: currentPrice,
-      image: selectedVariant.image || product.images[0],
+      image: selectedVariant.image || (product.images.length > 0 ? product.images[0] : ''),
       quantity: quantity,
       stockMax: selectedVariant.stock
     }]);
@@ -192,15 +220,37 @@ export const ProductDetail = () => {
         {/* FICHA PRINCIPAL */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start bg-artemisa-border/20 p-4 md:p-8 rounded-2xl border border-artemisa-border shadow-sm relative">
           <div className="space-y-3">
-            {/* Contenedor de Imagen Principal */}
-            <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-artemisa-light p-1 border border-dashed border-artemisa-accent/40">
+            {/* Contenedor de Imagen Principal con Controles de Navegación */}
+            <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-artemisa-light p-1 border border-dashed border-artemisa-accent/40 group">
               <div className="w-full h-full rounded-lg overflow-hidden relative">
                 <img 
-                  src={activeImage} 
+                  src={activeImage || '/placeholder.jpg'} 
                   alt={product.name} 
-                  className="w-full h-full object-cover rounded-lg" 
+                  className="w-full h-full object-cover rounded-lg transition-all duration-300" 
                 />
               </div>
+
+              {/* Botones para pasar imágenes */}
+              {galleryImages.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-artemisa-primary/80 hover:bg-artemisa-primary text-white p-2 rounded-full shadow-md backdrop-blur-sm transition-all opacity-80 hover:opacity-100"
+                    aria-label="Imagen anterior"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-artemisa-primary/80 hover:bg-artemisa-primary text-white p-2 rounded-full shadow-md backdrop-blur-sm transition-all opacity-80 hover:opacity-100"
+                    aria-label="Imagen siguiente"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
 
               {product.isOffer && (
                 <span className="absolute top-4 left-4 z-10 bg-artemisa-primary text-artemisa-accent border border-artemisa-accent/40 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
@@ -209,16 +259,17 @@ export const ProductDetail = () => {
               )}
             </div>
 
-            {/* Tiras de Miniaturas generales */}
-            {product.images.length > 1 && (
+            {/* Tira de Miniaturas (Muestra todas las imágenes consolidadas) */}
+            {galleryImages.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {product.images.map((img, idx) => (
+                {galleryImages.map((img, idx) => (
                   <button
                     key={idx}
+                    type="button"
                     onClick={() => setActiveImage(img)}
                     className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all flex-shrink-0 p-0.5 bg-artemisa-light ${
                       activeImage === img
-                        ? 'border-dashed border-artemisa-accent scale-95 shadow-inner'
+                        ? 'border-2 border-artemisa-accent scale-95 shadow-md'
                         : 'border-dashed border-artemisa-border opacity-70 hover:opacity-100 hover:border-artemisa-accent'
                     }`}
                   >
@@ -293,21 +344,13 @@ export const ProductDetail = () => {
                             title={v.color || v.name}
                             className={`relative w-14 h-14 rounded-xl overflow-hidden border transition-all p-0.5 ${
                               isSelected
-                                ? 'border-artemisa-accent scale-105 shadow-inner'
+                                ? 'border-2 border-artemisa-accent scale-105 shadow-md'
                                 : 'border-artemisa-border opacity-80 hover:opacity-100 hover:border-artemisa-accent/60'
                             }`}
                           >
-                            <div 
-                              className="w-full h-full rounded-lg overflow-hidden relative p-[1px]"
-                              style={{
-                                backgroundImage: isSelected ? 'linear-gradient(to right, var(--color-artemisa-accent, #c48b5e) 50%, transparent 0%), linear-gradient(to bottom, var(--color-artemisa-accent, #c48b5e) 50%, transparent 0%), linear-gradient(to right, var(--color-artemisa-accent, #c48b5e) 50%, transparent 0%), linear-gradient(to bottom, var(--color-artemisa-accent, #c48b5e) 50%, transparent 0%)' : 'none',
-                                backgroundPosition: 'top, right, bottom, left',
-                                backgroundSize: '8px 1px, 1px 8px, 8px 1px, 1px 8px',
-                                backgroundRepeat: 'repeat-x, repeat-y, repeat-x, repeat-y'
-                              }}
-                            >
+                            <div className="w-full h-full rounded-lg overflow-hidden relative p-[1px]">
                               {v.image ? (
-                                <img src={v.image} alt={v.name} className="w-full h-full object-cover rounded-lg p-[1px]" />
+                                <img src={v.image} alt={v.name} className="w-full h-full object-cover rounded-lg" />
                               ) : (
                                 <div className="w-full h-full bg-artemisa-border/40 flex items-center justify-center text-[10px] font-bold text-artemisa-primary text-center p-1 rounded-lg">
                                   {v.color || v.name}
@@ -443,7 +486,6 @@ export const ProductDetail = () => {
                           alt={relProduct.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                         />
-
                         <div className="absolute inset-0 bg-gradient-to-t from-artemisa-primary/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                       </div>
 
