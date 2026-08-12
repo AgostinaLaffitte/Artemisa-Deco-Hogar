@@ -113,18 +113,18 @@ export const ProductDetail = () => {
     .filter((img): img is string => Boolean(img));
   
   // Unificamos y quitamos duplicados respetando el orden
-  const galleryImages = Array.from(new Set([...productImages, ...variantImages]));
+  const galleryImages = Array.from(new Set([...productImages, ...variantImages])).filter(Boolean);
 
   const currentImageIndex = galleryImages.indexOf(activeImage);
 
   const handlePrevImage = () => {
-    if (galleryImages.length === 0) return;
+    if (galleryImages.length <= 1) return;
     const nextIdx = currentImageIndex <= 0 ? galleryImages.length - 1 : currentImageIndex - 1;
     setActiveImage(galleryImages[nextIdx]);
   };
 
   const handleNextImage = () => {
-    if (galleryImages.length === 0) return;
+    if (galleryImages.length <= 1) return;
     const nextIdx = currentImageIndex >= galleryImages.length - 1 ? 0 : currentImageIndex + 1;
     setActiveImage(galleryImages[nextIdx]);
   };
@@ -148,7 +148,11 @@ export const ProductDetail = () => {
     if (match) {
       setSelectedVariant(match);
       if (match.color) setSelectedColor(match.color);
-      if (match.image) setActiveImage(match.image);
+      if (match.image) {
+        setActiveImage(match.image);
+      } else if (product.images && product.images.length > 0) {
+        setActiveImage(product.images[0]);
+      }
       setQuantity(1);
     }
   };
@@ -157,7 +161,13 @@ export const ProductDetail = () => {
     setSelectedVariant(variant);
     setSelectedColor(variant.color || variant.name);
     if (variant.size) setSelectedSize(variant.size);
-    if (variant.image) setActiveImage(variant.image);
+    
+    // Si la variante tiene imagen la activa; si no, fuerza la imagen principal del producto
+    if (variant.image) {
+      setActiveImage(variant.image);
+    } else if (product.images && product.images.length > 0) {
+      setActiveImage(product.images[0]);
+    }
     setQuantity(1);
   };
 
@@ -221,14 +231,12 @@ export const ProductDetail = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start bg-artemisa-border/20 p-4 md:p-8 rounded-2xl border border-artemisa-border shadow-sm relative">
           <div className="space-y-3">
             {/* Contenedor de Imagen Principal con Controles de Navegación */}
-            <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-artemisa-light p-1 border border-dashed border-artemisa-accent/40 group">
-              <div className="w-full h-full rounded-lg overflow-hidden relative">
-                <img 
-                  src={activeImage || '/placeholder.jpg'} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover rounded-lg transition-all duration-300" 
-                />
-              </div>
+            <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-artemisa-light border border-artemisa-border group">
+              <img 
+                src={activeImage || (product.images && product.images[0]) || '/placeholder.jpg'} 
+                alt={product.name} 
+                className="w-full h-full object-cover rounded-xl transition-all duration-300" 
+              />
 
               {/* Botones para pasar imágenes */}
               {galleryImages.length > 1 && (
@@ -236,7 +244,7 @@ export const ProductDetail = () => {
                   <button
                     type="button"
                     onClick={handlePrevImage}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-artemisa-primary/80 hover:bg-artemisa-primary text-white p-2 rounded-full shadow-md backdrop-blur-sm transition-all opacity-80 hover:opacity-100"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
                     aria-label="Imagen anterior"
                   >
                     <ChevronLeft size={20} />
@@ -244,7 +252,7 @@ export const ProductDetail = () => {
                   <button
                     type="button"
                     onClick={handleNextImage}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-artemisa-primary/80 hover:bg-artemisa-primary text-white p-2 rounded-full shadow-md backdrop-blur-sm transition-all opacity-80 hover:opacity-100"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-all"
                     aria-label="Imagen siguiente"
                   >
                     <ChevronRight size={20} />
@@ -259,7 +267,7 @@ export const ProductDetail = () => {
               )}
             </div>
 
-            {/* Tira de Miniaturas (Muestra todas las imágenes consolidadas) */}
+            {/* Tira de Miniaturas */}
             {galleryImages.length > 1 && (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {galleryImages.map((img, idx) => (
@@ -267,15 +275,13 @@ export const ProductDetail = () => {
                     key={idx}
                     type="button"
                     onClick={() => setActiveImage(img)}
-                    className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all flex-shrink-0 p-0.5 bg-artemisa-light ${
+                    className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all flex-shrink-0 bg-artemisa-light ${
                       activeImage === img
                         ? 'border-2 border-artemisa-accent scale-95 shadow-md'
-                        : 'border-dashed border-artemisa-border opacity-70 hover:opacity-100 hover:border-artemisa-accent'
+                        : 'border-artemisa-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <div className="w-full h-full rounded-md overflow-hidden relative">
-                      <img src={img} alt="" className="w-full h-full object-cover rounded-md" />
-                    </div>
+                    <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>
@@ -336,27 +342,21 @@ export const ProductDetail = () => {
                     <div className="flex flex-wrap gap-3">
                       {availableColors.map((v) => {
                         const isSelected = selectedVariant?.id === v.id;
+                        const variantImgSrc = v.image || (product.images && product.images[0]) || '/placeholder.jpg';
+
                         return (
                           <button
                             key={v.id}
                             type="button"
                             onClick={() => handleSelectVariant(v)}
                             title={v.color || v.name}
-                            className={`relative w-14 h-14 rounded-xl overflow-hidden border transition-all p-0.5 ${
+                            className={`relative w-14 h-14 rounded-xl overflow-hidden border transition-all ${
                               isSelected
                                 ? 'border-2 border-artemisa-accent scale-105 shadow-md'
-                                : 'border-artemisa-border opacity-80 hover:opacity-100 hover:border-artemisa-accent/60'
+                                : 'border-artemisa-border opacity-80 hover:opacity-100'
                             }`}
                           >
-                            <div className="w-full h-full rounded-lg overflow-hidden relative p-[1px]">
-                              {v.image ? (
-                                <img src={v.image} alt={v.name} className="w-full h-full object-cover rounded-lg" />
-                              ) : (
-                                <div className="w-full h-full bg-artemisa-border/40 flex items-center justify-center text-[10px] font-bold text-artemisa-primary text-center p-1 rounded-lg">
-                                  {v.color || v.name}
-                                </div>
-                              )}
-                            </div>
+                            <img src={variantImgSrc} alt={v.name} className="w-full h-full object-cover" />
                           </button>
                         );
                       })}
@@ -530,7 +530,7 @@ export const ProductDetail = () => {
             className="w-full h-12 bg-artemisa-primary text-artemisa-light font-bold uppercase text-xs tracking-wider rounded-xl flex items-center justify-center gap-2 shadow-md px-4 cursor-pointer"
           >
             <ShoppingBag size={18} className="text-artemisa-accent shrink-0" />
-            <span className="text-artemisa-light font-bold whitespace-nowrap">
+            <span className="font-bold whitespace-nowrap">
               Agregar al carrito ({quantity})
             </span>
           </button>
