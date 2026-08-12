@@ -1,4 +1,3 @@
-// src/products/products.service.ts
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -25,6 +24,9 @@ export class ProductsService {
             name: variant.name,
             stock: Number(variant.stock),
             price: variant.price ? Number(variant.price) : null,
+            size: variant.size || null,
+            color: variant.color || null,
+            images: variant.images || [], // <--- Guardar array de fotos/videos de la variante
           })),
         },
       },
@@ -64,7 +66,6 @@ export class ProductsService {
   }
 
   async update(id: number, updateProductDto: UpdateProductDto) {
-    // Desestructuramos usando de base los campos estrictos del DTO
     const { categories, variants, images, ...productData } = updateProductDto;
     const actualOfferPrice = productData.isOffer ? updateProductDto.offerPrice : null;
 
@@ -73,7 +74,6 @@ export class ProductsService {
       data: {
         ...productData,
         offerPrice: actualOfferPrice,
-        // Si vienen imágenes procesadas por Multer en el controlador, actualizamos el campo en la BD
         ...(images ? { images: { set: images } } : {}),
         ...(categories ? {
           categories: {
@@ -87,6 +87,9 @@ export class ProductsService {
               name: variant.name,
               stock: Number(variant.stock),
               price: variant.price ? Number(variant.price) : null,
+              size: variant.size || null,
+              color: variant.color || null,
+              images: variant.images || [], // <--- Recrear variantes asociando sus imágenes/videos
             })),
           },
         } : {}),
@@ -99,7 +102,6 @@ export class ProductsService {
   }
 
   async remove(id: number) {
-    // Primero eliminamos en cascada las variantes asociadas para evitar violaciones de clave foránea en Postgres
     await this.prisma.productVariant.deleteMany({
       where: { productId: id },
     });

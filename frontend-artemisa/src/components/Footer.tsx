@@ -29,7 +29,7 @@ export const Footer = () => {
         <div className="container mx-auto px-6 py-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {[
-              { icon: ShoppingBag, title: "Descuento", text: "15% OFF mayorista" },
+              { icon: ShoppingBag, title: "Descuento", text: "15% OFF pasando los $150.000" },
               { icon: Truck, title: "Envíos", text: "Retiro o despacho" },
               { icon: ShieldCheck, title: "Seguridad", text: "Pago 100% seguro" }
             ].map((item, i) => (

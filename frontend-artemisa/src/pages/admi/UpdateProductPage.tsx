@@ -39,6 +39,9 @@ export const UpdateProductPage = () => {
     setVariants,
     handleImageChange,
     removeNewImage,
+    addVariant,
+    removeVariant,
+    changeVariant,
   } = useProductForm([]);
 
   useEffect(() => {
@@ -69,10 +72,11 @@ export const UpdateProductPage = () => {
             name: v.name,
             stock: v.stock,
             price: v.price,
-            image: v.image || '',
+            images: v.images || (v.image ? [v.image] : []),
+            files: [],
           })));
         } else {
-          setVariants([{ name: '', stock: 1, price: null, image: '' }]);
+          setVariants([{ name: '', stock: 1, price: null, images: [], files: [] }]);
         }
       } catch {
         setStatus({ type: 'error', message: 'Error al recuperar los datos del servidor.' });
@@ -86,7 +90,7 @@ export const UpdateProductPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !price) {
-      setStatus({ type: 'error', message: 'Campos mandatorios vacíos.' });
+      setStatus({ type: 'error', message: 'Campos obligatorios vacíos.' });
       return;
     }
 
@@ -98,23 +102,33 @@ export const UpdateProductPage = () => {
       formData.append('description', description.trim());
       formData.append('isOffer', String(isOffer));
       formData.append('offerPrice', isOffer && offerPrice ? offerPrice : '');
-      selectedCategories.forEach(catId => formData.append('categories[]', catId));
+      selectedCategories.forEach(catId => formData.append('categories', catId));
 
-      const validVariants = variants
-        .filter(v => v.name.trim() !== '')
-        .map(v => ({ 
-          id: v.id, 
-          name: v.name.trim(), 
-          stock: Number(v.stock), 
-          price: v.price ? Number(v.price) : null,
-          image: v.image || null
-        }));
-      
-      formData.append('variants', JSON.stringify(validVariants));
-      existingImages.forEach(url => formData.append('images[]', url));
+      const validVariants = variants.filter(v => v.name.trim() !== '');
+
+      const variantsPayload = validVariants.map((variant, index) => {
+        if (variant.files && variant.files.length > 0) {
+          variant.files.forEach(file => {
+            formData.append(`variant_${index}`, file);
+          });
+        }
+        return {
+          id: variant.id,
+          name: variant.name.trim(),
+          stock: Number(variant.stock),
+          price: variant.price ? Number(variant.price) : null,
+          images: variant.images || [],
+        };
+      });
+
+      formData.append('variants', JSON.stringify(variantsPayload));
+      existingImages.forEach(url => formData.append('existingImages', url));
       imageFiles.forEach(file => formData.append('files', file));
 
-      await api.patch(`/products/${productId}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      await api.patch(`/products/${productId}`, formData, { 
+        headers: { 'Content-Type': 'multipart/form-data' } 
+      });
+
       setStatus({ type: 'success', message: '¡Artículo actualizado con éxito!' });
       setTimeout(() => navigate('/admin/productos'), 1500);
     } catch {
@@ -162,9 +176,9 @@ export const UpdateProductPage = () => {
 
           <VariantMatrix 
             variants={variants}
-            onAddVariant={() => setVariants(prev => [...prev, { name: '', stock: 1, price: null, image: '' }])}
-            onRemoveVariant={(idx) => setVariants(prev => prev.filter((_, i) => i !== idx))}
-            onVariantChange={(idx, field, val) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, [field]: val } : v))}
+            onAddVariant={addVariant}
+            onRemoveVariant={removeVariant}
+            onVariantChange={changeVariant}
           />
         </div>
 

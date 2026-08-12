@@ -84,30 +84,31 @@ export const Home = () => {
       )}
 
      {/* BANNER DE PROPUESTA DE VALOR / BENEFICIOS ARTESANALES */}
-<section className="border-b border-artemisa-border bg-artemisa-border/30 py-6 px-4">
-  <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4">
+{/* BANNER DE PROPUESTA DE VALOR / BENEFICIOS ARTESANALES */}
+<section className="border-b border-artemisa-border bg-artemisa-border/30 py-3 md:py-6 px-4">
+  <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 divide-y md:divide-y-0 divide-artemisa-border/40">
     
-    <div className="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-2 sm:gap-3">
-      <Scissors className="text-artemisa-secondary shrink-0" size={22} />
+    <div className="flex items-center md:justify-center gap-3 pt-2 first:pt-0 md:pt-0">
+      <Scissors className="text-artemisa-secondary shrink-0" size={20} />
       <div>
         <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Trabajo Artesanal</h4>
-        <p className="text-[11px] text-artemisa-secondary">Atención en cada detalle y confección</p>
+        <p className="text-[11px] text-artemisa-secondary leading-tight">Atención en cada detalle y confección</p>
       </div>
     </div>
     
-    <div className="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-2 sm:gap-3">
-      <ShieldCheck className="text-artemisa-secondary shrink-0" size={22} />
+    <div className="flex items-center md:justify-center gap-3 pt-2 md:pt-0">
+      <ShieldCheck className="text-artemisa-secondary shrink-0" size={20} />
       <div>
         <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Materiales Seleccionados</h4>
-        <p className="text-[11px] text-artemisa-secondary">Telas resistentes de primera línea</p>
+        <p className="text-[11px] text-artemisa-secondary leading-tight">Telas resistentes de primera línea</p>
       </div>
     </div>
 
-    <div className="flex flex-col sm:flex-row items-center justify-center text-center sm:text-left gap-2 sm:gap-3">
-      <Truck className="text-artemisa-secondary shrink-0" size={22} />
+    <div className="flex items-center md:justify-center gap-3 pt-2 md:pt-0">
+      <Truck className="text-artemisa-secondary shrink-0" size={20} />
       <div>
         <h4 className="text-xs font-bold uppercase tracking-wider text-artemisa-primary">Envíos Cuidados</h4>
-        <p className="text-[11px] text-artemisa-secondary">Empaquetado listo para disfrutar o regalar</p>
+        <p className="text-[11px] text-artemisa-secondary leading-tight">Empaquetado listo para disfrutar o regalar</p>
       </div>
     </div>
 

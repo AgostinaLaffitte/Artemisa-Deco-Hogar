@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import type { LocalVariant } from '../components/Admi/VariantMatrix';
+const defaultVariant: LocalVariant = {
+  name: '',
+  stock: 1,
+  price: null,
+  images: [],
+  files: [],
+};
 
-export const useProductForm = (initialVariants: LocalVariant[] = [{ name: '', stock: 1, price: null, image: '' }]) => {
+export const useProductForm = (initialVariants: LocalVariant[] = [defaultVariant]) => {
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [variants, setVariants] = useState<LocalVariant[]>(initialVariants);
@@ -31,7 +38,7 @@ export const useProductForm = (initialVariants: LocalVariant[] = [{ name: '', st
     setPreviewUrls([]);
   };
 
-  const addVariant = () => setVariants(prev => [...prev, { name: '', stock: 1, price: null, image: '' }]);
+  const addVariant = () => setVariants(prev => [...prev, { name: '', stock: 1, price: null, images: [], files: [] }]);
   const removeVariant = (index: number) => setVariants(prev => prev.filter((_, i) => i !== index));
   const changeVariant = (index: number, field: keyof LocalVariant, value: any) => {
     setVariants(prev => prev.map((v, i) => i === index ? { ...v, [field]: value } : v));

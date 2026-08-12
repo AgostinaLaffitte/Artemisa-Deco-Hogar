@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, IsOptional, IsArray } from 'class-validator';
 
 export class CreateVariantDto {
   @IsString()
@@ -21,9 +21,10 @@ export class CreateVariantDto {
   @IsOptional()
   color?: string;
 
-  @IsString()
   @IsOptional()
-  image?: string;
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 
   @IsNumber()
   @IsNotEmpty()

@@ -29,7 +29,7 @@ model ProductVariant {
   price     Float?
   size      String?     // Opcional (ej: "40x40", "Standard", "S")
   color     String?     // Opcional (ej: "Tusor Beige", "Negro")
-  image     String?     // Opcional (URL de la foto de la variante)
+  images    String[]                            
   product   Product     @relation(fields: [productId], references: [id])
   productId Int
   orderItems OrderItem[]

@@ -1,11 +1,14 @@
-import { Layers, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Layers, Plus, Trash2, Upload, X, Film, Image as ImageIcon } from 'lucide-react';
 
 export interface LocalVariant {
   id?: number;
   name: string;
   stock: number;
   price: number | null;
-  image?: string | null;
+  size?: string;
+  color?: string;
+  images: string[];     // URLs de imágenes/videos existentes o ya subidos
+  files?: File[];       // Nuevos archivos de la variante a subir al backend
 }
 
 interface VariantMatrixProps {
@@ -21,6 +24,25 @@ export const VariantMatrix = ({
   onRemoveVariant,
   onVariantChange,
 }: VariantMatrixProps) => {
+
+  const handleVariantFiles = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      const existingFiles = variants[index].files || [];
+      onVariantChange(index, 'files', [...existingFiles, ...newFiles]);
+    }
+  };
+
+  const removeVariantFile = (variantIndex: number, fileIndex: number) => {
+    const updatedFiles = (variants[variantIndex].files || []).filter((_, i) => i !== fileIndex);
+    onVariantChange(variantIndex, 'files', updatedFiles);
+  };
+
+  const removeVariantUrl = (variantIndex: number, urlIndex: number) => {
+    const updatedImages = (variants[variantIndex].images || []).filter((_, i) => i !== urlIndex);
+    onVariantChange(variantIndex, 'images', updatedImages);
+  };
+
   return (
     <div className="bg-artemisa-border/30 rounded-2xl p-6 shadow-xs border border-artemisa-border space-y-4">
       <div className="flex items-center justify-between border-b border-artemisa-border pb-3">
@@ -37,20 +59,20 @@ export const VariantMatrix = ({
       </div>
 
       <p className="text-[11px] text-artemisa-secondary">
-        Agregá variantes según medidas (ej. 1 Plaza, 2 Plazas) o tipo de tela/color y asignales su imagen opcional.
+        Agregá variantes según medidas (ej. 1 Plaza, 2 Plazas) o tipo de tela/color y asignales sus fotos o videos específicos.
       </p>
 
       <div className="space-y-4">
         {variants.map((variant, index) => (
-          <div key={index} className="bg-white p-4 rounded-xl border border-artemisa-border space-y-3">
+          <div key={index} className="bg-white p-4 rounded-xl border border-artemisa-border space-y-4">
             
             {/* Nombre y Eliminar */}
             <div className="flex items-start gap-3">
               <div className="flex-1">
-                <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1">Nombre Variante</label>
+                <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1">Nombre Variante *</label>
                 <input
                   type="text"
-                  placeholder="Ej: 2 Plazas (140x190)"
+                  placeholder="Ej: 2 Plazas (140x190) - Tusor Lino"
                   value={variant.name}
                   onChange={(e) => onVariantChange(index, 'name', e.target.value)}
                   className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-sm font-medium outline-none focus:border-artemisa-secondary text-artemisa-neutral"
@@ -68,8 +90,8 @@ export const VariantMatrix = ({
               )}
             </div>
 
-            {/* Stock, Precio y URL de Imagen */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Stock y Precio */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1">Stock Disponible</label>
                 <input
@@ -77,7 +99,7 @@ export const VariantMatrix = ({
                   min="0"
                   value={variant.stock}
                   onChange={(e) => onVariantChange(index, 'stock', +e.target.value)}
-                  className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-sm font-semibold outline-none focus:border-artemisa-secondary text-center text-artemisa-neutral"
+                  className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-sm font-semibold outline-none focus:border-artemisa-secondary text-artemisa-neutral"
                 />
               </div>
 
@@ -86,26 +108,79 @@ export const VariantMatrix = ({
                 <input
                   type="number"
                   step="0.01"
-                  placeholder="0.00"
+                  placeholder="Dejar vacío si aplica precio base"
                   value={variant.price || ''}
                   onChange={(e) => onVariantChange(index, 'price', e.target.value ? +e.target.value : null)}
                   className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-sm font-bold text-artemisa-primary outline-none focus:border-artemisa-secondary"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1 flex items-center gap-1">
-                  <ImageIcon size={12} /> Imagen (URL)
+            {/* Subida de Archivos de la Variante (Fotos / Videos) */}
+            <div>
+              <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1.5 flex items-center gap-1">
+                <ImageIcon size={12} /> Archivos de la Variante (Imágenes / Videos)
+              </label>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Botón para subir archivos */}
+                <label className="flex items-center gap-1.5 px-3 py-2 bg-artemisa-light border border-dashed border-artemisa-secondary/40 hover:border-artemisa-secondary rounded-lg text-xs font-semibold text-artemisa-primary cursor-pointer transition-colors">
+                  <Upload size={14} /> Subir Archivo
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    onChange={(e) => handleVariantFiles(index, e)}
+                    className="hidden"
+                  />
                 </label>
-                <input
-                  type="text"
-                  placeholder="https://..."
-                  value={variant.image || ''}
-                  onChange={(e) => onVariantChange(index, 'image', e.target.value)}
-                  className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-xs outline-none focus:border-artemisa-secondary text-artemisa-neutral"
-                />
+
+                {/* Previsualización de imágenes/videos existentes (URLs) */}
+                {variant.images?.map((url, imgIdx) => (
+                  <div key={`url-${imgIdx}`} className="relative w-12 h-12 rounded-md overflow-hidden border border-artemisa-border group">
+                    {url.match(/\.(mp4|webm|mov)$/i) ? (
+                      <div className="w-full h-full bg-slate-900 flex items-center justify-center text-white">
+                        <Film size={16} />
+                      </div>
+                    ) : (
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeVariantUrl(index, imgIdx)}
+                      className="absolute top-0.5 right-0.5 bg-black/70 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={10} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Previsualización de nuevos archivos seleccionados (Files) */}
+                {variant.files?.map((file, fileIdx) => {
+                  const isVideo = file.type.startsWith('video/');
+                  const previewUrl = URL.createObjectURL(file);
+                  return (
+                    <div key={`file-${fileIdx}`} className="relative w-12 h-12 rounded-md overflow-hidden border border-artemisa-secondary group">
+                      {isVideo ? (
+                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-white">
+                          <Film size={16} />
+                        </div>
+                      ) : (
+                        <img src={previewUrl} alt="" className="w-full h-full object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeVariantFile(index, fileIdx)}
+                        className="absolute top-0.5 right-0.5 bg-rose-600 text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X size={10} />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+
           </div>
         ))}
       </div>

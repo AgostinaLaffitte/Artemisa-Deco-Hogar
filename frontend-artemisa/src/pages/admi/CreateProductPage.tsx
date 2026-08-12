@@ -18,7 +18,6 @@ export const CreateProductPage = () => {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
 
-  // Formulario Estados Locales (Sin ID manual)
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
@@ -33,7 +32,10 @@ export const CreateProductPage = () => {
     setVariants,
     handleImageChange,
     removeNewImage,
-  } = useProductForm([{ name: '', stock: 1, price: null, image: '' }]);
+    addVariant,
+    removeVariant,
+    changeVariant,
+  } = useProductForm([{ name: '', stock: 1, price: null, images: [], files: [] }]);
 
   useEffect(() => {
     api.get('/categories')
@@ -51,35 +53,50 @@ export const CreateProductPage = () => {
     try {
       setLoading(true);
       const formData = new FormData();
+      
+      // Datos Generales
       formData.append('name', name.trim());
       formData.append('price', price);
       formData.append('description', description.trim());
       formData.append('isOffer', String(isOffer));
       if (isOffer && offerPrice) formData.append('offerPrice', offerPrice);
 
-      // Enviar array de categorías
-      selectedCategories.forEach(catId => formData.append('categories[]', catId));
+      // Categorías
+      selectedCategories.forEach(catId => formData.append('categories', catId));
 
-      // Variantes incluyendo el atributo image
-      const validVariants = variants
-        .filter(v => v.name.trim() !== '')
-        .map(v => ({
-          name: v.name.trim(),
-          stock: Number(v.stock),
-          price: v.price ? Number(v.price) : null,
-          image: v.image || null,
-        }));
-      
-      formData.append('variants', JSON.stringify(validVariants));
+      // Archivos del producto principal
       imageFiles.forEach(file => formData.append('files', file));
 
-      await api.post('/products', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      // Procesar Variantes y sus archivos asociados (`variant_0`, `variant_1`, etc.)
+      const validVariants = variants.filter(v => v.name.trim() !== '');
+
+      const variantsPayload = validVariants.map((variant, index) => {
+        if (variant.files && variant.files.length > 0) {
+          variant.files.forEach(file => {
+            // Clave indexada para el backend: variant_0, variant_1...
+            formData.append(`variant_${index}`, file);
+          });
+        }
+        return {
+          name: variant.name.trim(),
+          stock: Number(variant.stock),
+          price: variant.price ? Number(variant.price) : null,
+          images: variant.images || [],
+        };
+      });
+
+      formData.append('variants', JSON.stringify(variantsPayload));
+
+      await api.post('/products', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
       setStatus({ type: 'success', message: '¡Producto creado con éxito!' });
       setTimeout(() => navigate('/admin/productos'), 1500);
     } catch (err) {
       console.error(err);
       setStatus({ type: 'error', message: 'Error al crear el producto.' });
-    } finally {
+    } finally{
       setLoading(false);
     }
   };
@@ -112,9 +129,9 @@ export const CreateProductPage = () => {
 
           <VariantMatrix 
             variants={variants}
-            onAddVariant={() => setVariants(prev => [...prev, { name: '', stock: 1, price: null, image: '' }])}
-            onRemoveVariant={(idx) => setVariants(prev => prev.filter((_, i) => i !== idx))}
-            onVariantChange={(idx, field, val) => setVariants(prev => prev.map((v, i) => i === idx ? { ...v, [field]: val } : v))}
+            onAddVariant={addVariant}
+            onRemoveVariant={removeVariant}
+            onVariantChange={changeVariant}
           />
         </div>
 
