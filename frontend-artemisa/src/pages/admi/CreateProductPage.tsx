@@ -29,7 +29,6 @@ export const CreateProductPage = () => {
     imageFiles,
     previewUrls,
     variants,
-    setVariants,
     handleImageChange,
     removeNewImage,
     addVariant,
@@ -73,7 +72,6 @@ export const CreateProductPage = () => {
       const variantsPayload = validVariants.map((variant, index) => {
         if (variant.files && variant.files.length > 0) {
           variant.files.forEach(file => {
-            // Clave indexada para el backend: variant_0, variant_1...
             formData.append(`variant_${index}`, file);
           });
         }
@@ -96,7 +94,7 @@ export const CreateProductPage = () => {
     } catch (err) {
       console.error(err);
       setStatus({ type: 'error', message: 'Error al crear el producto.' });
-    } finally{
+    } finally {
       setLoading(false);
     }
   };
