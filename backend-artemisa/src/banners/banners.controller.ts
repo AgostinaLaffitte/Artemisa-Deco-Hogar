@@ -26,7 +26,7 @@ export class BannersController {
   ) {
     try {
       if (files && files.length > 0) {
-        const result = await this.cloudinaryService.uploadImage(files[0]);
+        const result = await this.cloudinaryService.uploadFile(files[0]);
         createBannerDto.imageUrl = result.secure_url;
       }
       return await this.bannersService.create(createBannerDto);
