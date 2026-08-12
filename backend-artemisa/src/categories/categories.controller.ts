@@ -28,7 +28,7 @@ export class CategoriesController {
   ) {
     if (file) {
       // 5. Subimos a Cloudinary y guardamos la URL directa
-      const result = await this.cloudinaryService.uploadImage(file);
+      const result = await this.cloudinaryService.uploadFile(file);
       createCategoryDto.image = result.secure_url;
     }
 
@@ -44,7 +44,7 @@ export class CategoriesController {
   ) {
     if (file) {
       // 5. Subimos a Cloudinary y guardamos la URL directa
-      const result = await this.cloudinaryService.uploadImage(file);
+      const result = await this.cloudinaryService.uploadFile(file);
       updateCategoryDto.image = result.secure_url;
     }
 
