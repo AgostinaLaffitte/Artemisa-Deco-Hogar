@@ -6,6 +6,8 @@ import { Readable } from 'stream';
 export class CloudinaryService {
   async uploadFile(file: Express.Multer.File): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
+      const isVideo = file.mimetype.startsWith('video/');
+
       const readableStream = new Readable({
         read() {
           this.push(file.buffer);
@@ -13,9 +15,19 @@ export class CloudinaryService {
         },
       });
 
-      // Se especifica resource_type: 'auto' para aceptar tanto fotos como videos
+      // Opciones mejoradas para Cloudinary
+      const uploadOptions: Record<string, any> = {
+        resource_type: isVideo ? 'video' : 'image',
+      };
+
+      // Si es video, forzamos formato MP4 web estandarizado para evitar pantallas blancas/cortes
+      if (isVideo) {
+        uploadOptions.format = 'mp4';
+        uploadOptions.video_codec = 'auto'; // Transcodifica automáticamente a H.264 si viene en HEVC/MOV
+      }
+
       const upload = cloudinary.uploader.upload_stream(
-        { resource_type: 'auto' },
+        uploadOptions,
         (error, result) => {
           if (error) return reject(error);
           if (!result) return reject(new Error('Error al subir el archivo a Cloudinary'));
