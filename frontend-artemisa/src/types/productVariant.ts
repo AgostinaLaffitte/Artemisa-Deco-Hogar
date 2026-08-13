@@ -5,6 +5,8 @@ export interface ProductVariant {
   price?: number;
   size?: string;
   color?: string;
-  image?: string;
+  image?: string;          // Compatibilidad hacia atrás
+  images?: string[];        // Soporte para múltiples imágenes
+  media?: string[];         // Soporte para imágenes o videos
   productId: number;
 }

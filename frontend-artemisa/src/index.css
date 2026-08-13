@@ -36,3 +36,16 @@ body {
 .swiper-pagination-bullet-active {
   @apply opacity-100 bg-[#3d2314] scale-125;
 }
+
+/* En tu index.css o global.css */
+@layer utilities {
+  /* Ocultar scrollbar para Chrome, Safari y Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  /* Ocultar scrollbar para IE, Edge y Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE y Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}

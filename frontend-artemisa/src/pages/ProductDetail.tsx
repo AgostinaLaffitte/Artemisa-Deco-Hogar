@@ -7,6 +7,20 @@ import type { Product } from '../types/product';
 import type { ProductVariant } from '../types/productVariant';
 import { useCart } from '../context/CartContext';
 
+// Helper para verificar si un link es de video
+const isVideoUrl = (url: string) => {
+  return /\.(mp4|webm|ogg)($|\?)/i.test(url);
+};
+
+// Helper para extraer todas las imágenes/videos de una variante
+const getVariantImages = (v?: ProductVariant | null): string[] => {
+  if (!v) return [];
+  if (v.images && v.images.length > 0) return v.images;
+  if (v.media && v.media.length > 0) return v.media;
+  if (v.image) return [v.image];
+  return [];
+};
+
 export const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [product, setProduct] = useState<Product | null>(null);
@@ -40,18 +54,17 @@ export const ProductDetail = () => {
         const data = await ProductService.getById(productId);
         setProduct(data);
         
-        let initialImage = '';
-        if (data.images && data.images.length > 0) {
-          initialImage = data.images[0];
-        }
+        let initialImage = (data.images && data.images[0]) || '';
 
         if (data.variants && data.variants.length > 0) {
           const firstVariant = data.variants[0];
           setSelectedVariant(firstVariant);
           setSelectedSize(firstVariant.size || '');
           setSelectedColor(firstVariant.color || firstVariant.name);
-          if (firstVariant.image) {
-            initialImage = firstVariant.image;
+          
+          const variantImgs = getVariantImages(firstVariant);
+          if (variantImgs.length > 0) {
+            initialImage = variantImgs[0];
           }
         }
 
@@ -106,14 +119,17 @@ export const ProductDetail = () => {
     );
   }
 
-  // Lista consolidada de todas las imágenes disponibles (producto + variantes)
+  // Galería de imágenes/videos activa: prioritarios los de la variante seleccionada
+  const selectedVariantImages = getVariantImages(selectedVariant);
   const productImages = product.images || [];
-  const variantImages = (product.variants || [])
-    .map((v) => v.image)
-    .filter((img): img is string => Boolean(img));
-  
-  // Unificamos y quitamos duplicados respetando el orden
-  const galleryImages = Array.from(new Set([...productImages, ...variantImages])).filter(Boolean);
+
+  const galleryImages = Array.from(
+    new Set([
+      ...selectedVariantImages,
+      ...productImages,
+      ...(product.variants || []).flatMap((v) => getVariantImages(v))
+    ])
+  ).filter(Boolean);
 
   const currentImageIndex = galleryImages.indexOf(activeImage);
 
@@ -140,6 +156,15 @@ export const ProductDetail = () => {
     return true;
   });
 
+  const updateActiveImageForVariant = (variant: ProductVariant) => {
+    const imgs = getVariantImages(variant);
+    if (imgs.length > 0) {
+      setActiveImage(imgs[0]);
+    } else if (product.images && product.images.length > 0) {
+      setActiveImage(product.images[0]);
+    }
+  };
+
   const handleSelectSize = (size: string) => {
     setSelectedSize(size);
     const match = product.variants.find((v) => v.size === size && (selectedColor ? (v.color === selectedColor || v.name.includes(selectedColor)) : true)) 
@@ -148,11 +173,7 @@ export const ProductDetail = () => {
     if (match) {
       setSelectedVariant(match);
       if (match.color) setSelectedColor(match.color);
-      if (match.image) {
-        setActiveImage(match.image);
-      } else if (product.images && product.images.length > 0) {
-        setActiveImage(product.images[0]);
-      }
+      updateActiveImageForVariant(match);
       setQuantity(1);
     }
   };
@@ -161,13 +182,7 @@ export const ProductDetail = () => {
     setSelectedVariant(variant);
     setSelectedColor(variant.color || variant.name);
     if (variant.size) setSelectedSize(variant.size);
-    
-    // Si la variante tiene imagen la activa; si no, fuerza la imagen principal del producto
-    if (variant.image) {
-      setActiveImage(variant.image);
-    } else if (product.images && product.images.length > 0) {
-      setActiveImage(product.images[0]);
-    }
+    updateActiveImageForVariant(variant);
     setQuantity(1);
   };
 
@@ -185,7 +200,7 @@ export const ProductDetail = () => {
       variantId: selectedVariant.id,
       variantName: selectedVariant.name,
       price: currentPrice,
-      image: selectedVariant.image || (product.images.length > 0 ? product.images[0] : ''),
+      image: activeImage || (product.images.length > 0 ? product.images[0] : ''),
       quantity: quantity,
       stockMax: selectedVariant.stock
     }]);
@@ -230,13 +245,21 @@ export const ProductDetail = () => {
         {/* FICHA PRINCIPAL */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start bg-artemisa-border/20 p-4 md:p-8 rounded-2xl border border-artemisa-border shadow-sm relative">
           <div className="space-y-3">
-            {/* Contenedor de Imagen Principal con Controles de Navegación */}
+            {/* Contenedor de Imagen/Video Principal */}
             <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-artemisa-light border border-artemisa-border group">
-              <img 
-                src={activeImage || (product.images && product.images[0]) || '/placeholder.jpg'} 
-                alt={product.name} 
-                className="w-full h-full object-cover rounded-xl transition-all duration-300" 
-              />
+              {isVideoUrl(activeImage) ? (
+                <video 
+                  src={activeImage} 
+                  controls 
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              ) : (
+                <img 
+                  src={activeImage || (product.images && product.images[0]) || '/placeholder.jpg'} 
+                  alt={product.name} 
+                  className="w-full h-full object-cover rounded-xl transition-all duration-300" 
+                />
+              )}
 
               {/* Botones para pasar imágenes */}
               {galleryImages.length > 1 && (
@@ -267,21 +290,25 @@ export const ProductDetail = () => {
               )}
             </div>
 
-            {/* Tira de Miniaturas */}
+            {/* Tira de Miniaturas (con la clase no-scrollbar agregada) */}
             {galleryImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {galleryImages.map((img, idx) => (
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {galleryImages.map((mediaUrl, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setActiveImage(img)}
+                    onClick={() => setActiveImage(mediaUrl)}
                     className={`relative w-16 h-16 rounded-lg overflow-hidden border transition-all flex-shrink-0 bg-artemisa-light ${
-                      activeImage === img
+                      activeImage === mediaUrl
                         ? 'border-2 border-artemisa-accent scale-95 shadow-md'
                         : 'border-artemisa-border opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    {isVideoUrl(mediaUrl) ? (
+                      <video src={mediaUrl} className="w-full h-full object-cover pointer-events-none" />
+                    ) : (
+                      <img src={mediaUrl} alt="" className="w-full h-full object-cover" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -342,7 +369,8 @@ export const ProductDetail = () => {
                     <div className="flex flex-wrap gap-3">
                       {availableColors.map((v) => {
                         const isSelected = selectedVariant?.id === v.id;
-                        const variantImgSrc = v.image || (product.images && product.images[0]) || '/placeholder.jpg';
+                        const vImgs = getVariantImages(v);
+                        const variantImgSrc = vImgs.length > 0 ? vImgs[0] : (product.images && product.images[0]) || '/placeholder.jpg';
 
                         return (
                           <button
@@ -356,7 +384,11 @@ export const ProductDetail = () => {
                                 : 'border-artemisa-border opacity-80 hover:opacity-100'
                             }`}
                           >
-                            <img src={variantImgSrc} alt={v.name} className="w-full h-full object-cover" />
+                            {isVideoUrl(variantImgSrc) ? (
+                              <video src={variantImgSrc} className="w-full h-full object-cover pointer-events-none" />
+                            ) : (
+                              <img src={variantImgSrc} alt={v.name} className="w-full h-full object-cover" />
+                            )}
                           </button>
                         );
                       })}
