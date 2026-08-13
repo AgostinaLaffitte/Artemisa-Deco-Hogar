@@ -331,7 +331,7 @@ export const ProductDetail = () => {
                 </span>
               </div>
 
-              <p className="mt-4 text-xs md:text-sm text-artemisa-neutral/80 leading-relaxed border-b border-artemisa-border pb-5">
+              <p className="mt-4 text-xs md:text-sm text-artemisa-neutral/80 leading-relaxed border-b border-artemisa-border pb-5 whitespace-pre-line">
                 {product.description}
               </p>
 
