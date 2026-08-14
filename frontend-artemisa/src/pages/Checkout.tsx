@@ -8,7 +8,6 @@ import { ChevronLeft, Truck, Store, ShoppingBag, AlertCircle, CreditCard, Landma
 export const Checkout = () => {
   const { 
     cart, 
-    clearCart, 
     subtotalItems, 
     discountMayorista, 
     totalFinalPrice, 
@@ -91,7 +90,7 @@ export const Checkout = () => {
       };
 
       const createdOrder = await OrderService.create(finalOrder);
-      clearCart();
+   
 
       const mpUrl = createdOrder.initPoint || createdOrder.sandbox_init_point;
       if (mpUrl) {

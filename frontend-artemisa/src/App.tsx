@@ -21,6 +21,9 @@ import { AdminOrders } from './pages/admi/AdminOrders';
 import { Faq } from './pages/Faq';
 import { Footer } from './components/Footer';
 import ScrollToTop from './ScrollToTop';
+import { CheckoutSuccess } from './pages/CheckoutSuccess';
+import { CheckoutPending } from './pages/CheckoutPending';
+import { CheckoutFailure } from './pages/CheckoutFailure';
 
 // Un sub-componente rápido para envolver las páginas del admin dentro de su estructura visual
 const AdminLayoutWrapper = () => {
@@ -58,6 +61,11 @@ function App() {
               <Route path="/carrito" element={<CartPage />} />
               <Route path="/ayuda" element={<Faq />} />
               <Route path="/checkout" element={<Checkout />} />
+
+              {/* RUTA DE RETORNO DE MERCADO PAGO */}
+              <Route path="/checkout/success" element={<CheckoutSuccess />} />
+              <Route path="/checkout/failure" element={<CheckoutFailure />} />
+              <Route path="/checkout/pending" element={<CheckoutPending />} />
 
             </Route>
 
