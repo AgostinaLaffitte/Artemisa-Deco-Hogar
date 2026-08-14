@@ -6,7 +6,6 @@ import logoArtemisa from '../assets/logoArtemisa.png';
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
-  // Puntada de costura ultra fina
   const FineStitchLine = () => (
     <div 
       className="w-full h-[1px] opacity-30"
@@ -21,7 +20,6 @@ export const Footer = () => {
 
   return (
     <footer className="relative w-full bg-artemisa-neutral text-artemisa-light mt-auto">
-      {/* PESPUNTE SUPERIOR FINO */}
       <FineStitchLine />
 
       <div className="relative z-10 w-full">
@@ -33,8 +31,8 @@ export const Footer = () => {
               { icon: Truck, title: "Envíos", text: "Retiro o despacho" },
               { icon: ShieldCheck, title: "Seguridad", text: "Pago 100% seguro" }
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 justify-center sm:justify-start">
-                <item.icon size={18} strokeWidth={1.3} className="text-artemisa-accent" />
+              <div key={i} className="flex items-center gap-3 justify-center sm:justify-start text-center sm:text-left">
+                <item.icon size={18} strokeWidth={1.3} className="text-artemisa-accent shrink-0" />
                 <div>
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-artemisa-light">{item.title}</h4>
                   <p className="text-[11px] text-artemisa-border/80 font-light">{item.text}</p>
@@ -44,42 +42,41 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Pespunte intermedio */}
         <FineStitchLine />
 
         {/* Navegación principal */}
-        <div className="container mx-auto px-6 py-8 text-center md:text-left">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="container mx-auto px-6 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
             
             {/* Logo e Info */}
             <div className="flex flex-col items-center md:items-start space-y-3">
-             <Link to="/" className="flex items-center justify-center py-1 group">
-            <div 
-              className="h-11 md:h-12 w-36 md:w-45 bg-artemisa-light opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
-              style={{
-                maskImage: `url(${logoArtemisa})`,
-                WebkitMaskImage: `url(${logoArtemisa})`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-              }}
-              aria-label="Artemisa Confecciones"
-            />
-          </Link>
+              <Link to="/" className="flex items-center justify-center py-1 group">
+                <div 
+                  className="h-11 md:h-12 w-36 md:w-45 bg-artemisa-light opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]"
+                  style={{
+                    maskImage: `url(${logoArtemisa})`,
+                    WebkitMaskImage: `url(${logoArtemisa})`,
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    WebkitMaskPosition: 'center',
+                  }}
+                  aria-label="Artemisa Confecciones"
+                />
+              </Link>
               <p className="text-xs text-artemisa-border/80 font-light max-w-xs leading-relaxed">
                 Confecciones textiles artesanales hechas con dedicación para tu hogar.
               </p>
             </div>
 
             {/* Explorar */}
-            <div className="space-y-2">
+            <div className="flex flex-col items-center md:items-start space-y-2">
               <h4 className="text-xs font-semibold uppercase text-artemisa-accent tracking-widest">
                 Explorar
               </h4>
-              <div className="w-8 mx-auto md:mx-0">
+              <div className="w-8">
                 <FineStitchLine />
               </div>
               <ul className="space-y-2 text-xs font-light text-artemisa-border/90 pt-1">
@@ -90,11 +87,11 @@ export const Footer = () => {
             </div>
 
             {/* Contacto */}
-            <div className="space-y-2">
+            <div className="flex flex-col items-center md:items-start space-y-2">
               <h4 className="text-xs font-semibold uppercase text-artemisa-accent tracking-widest">
                 Contacto
               </h4>
-              <div className="w-8 mx-auto md:mx-0">
+              <div className="w-8">
                 <FineStitchLine />
               </div>
               <ul className="space-y-2 text-xs font-light text-artemisa-border/90 flex flex-col items-center md:items-start pt-1">
@@ -117,11 +114,11 @@ export const Footer = () => {
             </div>
 
             {/* Medios de Pago */}
-            <div className="space-y-2">
+            <div className="flex flex-col items-center md:items-start space-y-2">
               <h4 className="text-xs font-semibold uppercase text-artemisa-accent tracking-widest">
                 Medios de Pago
               </h4>
-              <div className="w-8 mx-auto md:mx-0">
+              <div className="w-8">
                 <FineStitchLine />
               </div>
               <p className="text-xs text-artemisa-border/80 font-light pt-1">
@@ -132,10 +129,8 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Pespunte inferior */}
         <FineStitchLine />
 
-        {/* Copyright */}
         <div className="py-4 text-center text-[10px] text-artemisa-accent/70 font-light tracking-widest">
           © {currentYear} ARTEMISA DECO & HOGAR
         </div>

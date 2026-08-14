@@ -49,6 +49,11 @@ export class CreateOrderDto {
   @IsString()
   @IsOptional() // Lo hacemos opcional porque ahora lo asignamos nosotros
   paymentMethod?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['ALL', 'TRANSFER'])
+  paymentType?: 'ALL' | 'TRANSFER';
   
   @IsArray()
   @ValidateNested({ each: true })
