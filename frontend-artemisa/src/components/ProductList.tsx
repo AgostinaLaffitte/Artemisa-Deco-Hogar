@@ -7,19 +7,31 @@ interface ProductListProps {
   products: Product[];
 }
 
-export const ProductList = ({ products }: ProductListProps) => {
+export const ProductList = ({ products = [] }: ProductListProps) => {
   const [search, setSearch] = useState('');
   const [selectedCat, setSelectedCat] = useState('Todos');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const categories = ['Todos', ...Array.from(new Set(
-    products.flatMap(p => p.categories?.map(c => c.name) || [])
-  ))];
+  // 🛡️ Extraer categorías de forma ultra-segura
+  const safeProducts = Array.isArray(products) ? products : [];
   
-  const filteredProducts = products.filter(product => {
+  const categoriesSet = new Set<string>();
+  safeProducts.forEach(p => {
+    if (Array.isArray(p.categories)) {
+      p.categories.forEach(c => {
+        if (c && c.name) categoriesSet.add(c.name);
+      });
+    }
+  });
+
+  const categories = ['Todos', ...Array.from(categoriesSet)];
+  
+  // 🛡️ Filtrado seguro
+  const filteredProducts = safeProducts.filter(product => {
+    const productCategories = Array.isArray(product.categories) ? product.categories : [];
     const matchesCategory = selectedCat === 'Todos' || 
-      product.categories?.some(c => c.name === selectedCat);
-    const matchesSearch = product.name.toLowerCase().includes(search.toLowerCase());
+      productCategories.some(c => c && c.name === selectedCat);
+    const matchesSearch = (product.name || '').toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 

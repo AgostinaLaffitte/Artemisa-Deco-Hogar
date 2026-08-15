@@ -26,7 +26,7 @@ export const Products = () => {
         setLoading(true);
         const catId = categoryFilter ? Number(categoryFilter) : undefined;
         const data = await ProductService.getAll(searchFilter, catId);
-        setProducts(data);
+        setProducts(Array.isArray(data) ? data : []); // 👈 Asegura que siempre guarde un array
       } catch (error) {
         console.error('Error al filtrar el catálogo de productos:', error);
         notify('No se pudieron cargar los productos. Intentá nuevamente más tarde.', 'error');
