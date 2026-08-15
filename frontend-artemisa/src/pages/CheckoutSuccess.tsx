@@ -1,16 +1,18 @@
 // src/pages/CheckoutSuccess.tsx
 import { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext'; // Ajusta la ruta a tu CartContext
+import { useCart } from '../context/CartContext';
 
 export const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get('orderId');
+  
+  // MP puede devolver 'external_reference' o tu backend 'orderId'
+  const orderId = searchParams.get('orderId') || searchParams.get('external_reference');
   const paymentId = searchParams.get('payment_id');
   const { clearCart } = useCart();
 
   useEffect(() => {
-    // Vaciamos el carrito una vez que la compra fue confirmada y volvimos
+    // Vaciamos el carrito cuando la compra se confirma al volver de MP
     clearCart();
   }, []);
 

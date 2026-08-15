@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { OrderService } from '../services/order.service';
 import { formatPrice } from '../utils/productUtils';
@@ -14,7 +14,7 @@ export const Checkout = () => {
     alcanzoMayorista 
   } = useCart();
   
-  const navigate = useNavigate();
+ 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -64,47 +64,50 @@ export const Checkout = () => {
     );
   }
 
-  const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setErrorMessage(null);
+const handleSubmitOrder = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setErrorMessage(null);
 
-    try {
-      const itemsPayload = cart.map(item => ({
-        variantId: item.variantId,
-        quantity: item.quantity
-      }));
+  try {
+    const itemsPayload = cart.map(item => ({
+      variantId: item.variantId,
+      quantity: item.quantity
+    }));
 
-      const finalOrder = {
-        customerName: formData.customerName,
-        customerEmail: formData.customerEmail,
-        customerPhone: formData.customerPhone,
-        deliveryMethod: formData.deliveryMethod,
-        paymentMethod: 'MERCADOPAGO',
-        paymentType, // Pasamos si es 'ALL' o 'TRANSFER'
-        address: formData.deliveryMethod === 'RETIRO' ? '' : formData.address,
-        city: formData.deliveryMethod === 'RETIRO' ? '' : formData.city,
-        postalCode: formData.deliveryMethod === 'RETIRO' ? '' : formData.postalCode,
-        shippingCost,
-        items: itemsPayload
-      };
+    const finalOrder = {
+      customerName: formData.customerName,
+      customerEmail: formData.customerEmail,
+      customerPhone: formData.customerPhone,
+      deliveryMethod: formData.deliveryMethod,
+      paymentMethod: 'MERCADOPAGO',
+      paymentType,
+      address: formData.deliveryMethod === 'RETIRO' ? '' : formData.address,
+      city: formData.deliveryMethod === 'RETIRO' ? '' : formData.city,
+      postalCode: formData.deliveryMethod === 'RETIRO' ? '' : formData.postalCode,
+      shippingCost,
+      items: itemsPayload
+    };
 
-      const createdOrder = await OrderService.create(finalOrder);
-   
+    const createdOrder = await OrderService.create(finalOrder);
 
-      const mpUrl = createdOrder.initPoint || createdOrder.sandbox_init_point;
-      if (mpUrl) {
-        window.location.href = mpUrl;
-      } else {
-        navigate('/pedido-confirmado', { state: { orderId: createdOrder.id } });
-      }
-
-    } catch (error: any) {
-      console.error('Error al procesar la orden:', error);
-      setErrorMessage(error.response?.data?.message || 'Hubo un problema al procesar tu pedido.');
+    const mpUrl = createdOrder.initPoint || createdOrder.sandbox_init_point;
+    
+    if (mpUrl) {
+      // Redirige directamente a la pasarela de Mercado Pago
+      window.location.href = mpUrl;
+    } else {
+      // Fallback sólo si no se generó link de MP por algún problema inesperado
+      setErrorMessage('No se pudo generar el enlace de pago de Mercado Pago.');
       setLoading(false);
     }
-  };
+
+  } catch (error: any) {
+    console.error('Error al procesar la orden:', error);
+    setErrorMessage(error.response?.data?.message || 'Hubo un problema al procesar tu pedido.');
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-artemisa-light/50 py-6 md:py-12">

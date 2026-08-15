@@ -1,8 +1,9 @@
+// src/pages/CheckoutPending.tsx
 import { useSearchParams, Link } from 'react-router-dom';
 
 export const CheckoutPending = () => {
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get('orderId');
+  const orderId = searchParams.get('orderId') || searchParams.get('external_reference');
 
   return (
     <div className="max-w-2xl mx-auto my-12 p-8 bg-white rounded-lg shadow-md text-center">
