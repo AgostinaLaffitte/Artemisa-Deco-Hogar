@@ -66,28 +66,27 @@ export const AdminOffersPage = () => {
       api.get('/categories')
     ]);
 
-    // 🛡️ Protegemos todas las respuestas para asegurar que sean Arrays
-    setPromotions(
-      Array.isArray(promosRes.data) 
-        ? promosRes.data 
-        : (promosRes.data?.promotions || [])
-    );
-    
-    setProducts(
-      Array.isArray(productsRes.data) 
-        ? productsRes.data 
-        : (productsRes.data?.products || [])
-    );
+    // DEBUG: Esto nos dirá exactamente qué está llegando en la consola
+    console.log("Respuesta Promos:", promosRes.data);
 
-    setCategories(
-      Array.isArray(categoriesRes.data) 
-        ? categoriesRes.data 
-        : (categoriesRes.data?.categories || [])
-    );
+    // BLINDAJE: Si no es un array, intentamos buscar una propiedad que contenga el array
+    // O devolvemos un array vacío para que al menos NO explote.
+    const getSafeData = (res: any) => {
+      if (Array.isArray(res.data)) return res.data;
+      if (res.data && typeof res.data === 'object') {
+        // Buscamos si hay alguna propiedad que sea un array (promotions, products, etc)
+        const possibleArrayKey = Object.keys(res.data).find(key => Array.isArray(res.data[key]));
+        return possibleArrayKey ? res.data[possibleArrayKey] : [];
+      }
+      return [];
+    };
+
+    setPromotions(getSafeData(promosRes));
+    setProducts(getSafeData(productsRes));
+    setCategories(getSafeData(categoriesRes));
+
   } catch (error) {
     console.error('Error al cargar datos iniciales:', error);
-    notify('Error al cargar los datos.', 'error');
-    // Fallback de seguridad ante un error de red/servidor
     setPromotions([]);
     setProducts([]);
     setCategories([]);
