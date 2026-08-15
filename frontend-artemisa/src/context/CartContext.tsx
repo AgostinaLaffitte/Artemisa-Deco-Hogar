@@ -34,10 +34,15 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [cart, setCart] = useState<CartItem[]>(() => {
+ const [cart, setCart] = useState<CartItem[]>(() => {
+  try {
     const savedCart = localStorage.getItem('aquiles_cart');
-    return savedCart ? JSON.parse(savedCart) : [];
-  });
+    const parsed = savedCart ? JSON.parse(savedCart) : [];
+    return Array.isArray(parsed) ? parsed : []; // 🛡️ Si no es array, limpiamos
+  } catch (error) {
+    return [];
+  }
+});
 
  useEffect(() => {
   api.get('/promotions')
@@ -65,24 +70,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('aquiles_cart', JSON.stringify(cart));
   }, [cart]);
   const addToCart = (newItems: CartItem[]) => {
-    setCart((prev) => {
-      let updated = [...prev];
-      newItems.forEach((newItem) => {
-        const idx = updated.findIndex(i => i.variantId === newItem.variantId);
-        if (idx > -1) {
-          // Si ya existe, actualizamos la cantidad (sin pasarse del stock)
-          updated[idx] = { 
+  // 🛡️ Aseguramos que newItems siempre sea una lista
+      const itemsArray = Array.isArray(newItems) ? newItems : [newItems];
+
+      setCart((prev) => {
+        let updated = [...prev];
+        itemsArray.forEach((newItem) => {
+          if (!newItem || !newItem.variantId) return; // Evita ítems corruptos
+          const idx = updated.findIndex(i => i.variantId === newItem.variantId);
+          if (idx > -1) {
+            updated[idx] = { 
               ...updated[idx], 
               quantity: Math.min(updated[idx].quantity + newItem.quantity, newItem.stockMax) 
-          };
-        } else {
-          // Si no existe, lo agregamos
-          updated.push(newItem);
-        }
+            };
+          } else {
+            updated.push(newItem);
+          }
+        });
+        return updated;
       });
-      return updated;
-    });
-  };
+    };
 
   const removeFromCart = (variantId: number) => setCart(prev => prev.filter(i => i.variantId !== variantId));
   const updateQuantity = (variantId: number, quantity: number) => setCart(prev => 
