@@ -9,10 +9,18 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
 interface HeroProps {
-  offers: Banner[];
+  offers?: Banner[]; // 👈 Lo hacemos opcional por seguridad
 }
 
-export const Hero = ({ offers }: HeroProps) => {
+export const Hero = ({ offers = [] }: HeroProps) => {
+  // 🛡️ Garantizamos que safeOffers SIEMPRE sea un Array válido
+  const safeOffers = Array.isArray(offers) ? offers : [];
+
+  // Si no hay ofertas o banners para mostrar, no renderizamos el Swiper para evitar errores visuales
+  if (safeOffers.length === 0) {
+    return null; // O un esqueleto / placeholder si prefieres
+  }
+
   return (
     <section className="max-w-7xl mx-auto px-3 sm:px-4 pt-3 md:pt-8">
       {/* Marco contenedor con aspect-ratio responsivo */}
@@ -30,17 +38,14 @@ export const Hero = ({ offers }: HeroProps) => {
               bulletActiveClass: 'swiper-pagination-bullet-active !bg-artemisa-accent !w-6',
             }}
             autoplay={{ delay: 6000, disableOnInteraction: false }}
-            loop={offers.length > 1}
+            loop={safeOffers.length > 1}
             className="w-full h-auto"
           >
-            {offers.map((banner) => {
+            {safeOffers.map((banner) => {
               const slideContent = (
                 <div className="w-full relative group cursor-pointer flex flex-col justify-end">
                   
-                  {/* Imagen con aspect ratio adaptable: 
-                      - Mobile: aspect-[16/9] o aspect-[4/3] (se ve toda la foto completa)
-                      - Desktop: aspect-[21/9] o altura fija md:h-[500px]
-                  */}
+                  {/* Imagen con aspect ratio adaptable */}
                   <div className="w-full aspect-[4/3] sm:aspect-[16/9] md:h-[500px] relative overflow-hidden">
                     <img 
                       src={banner.imageUrl} 
@@ -48,11 +53,11 @@ export const Hero = ({ offers }: HeroProps) => {
                       className="w-full h-full object-cover object-center"
                     />
                     
-                    {/* Overlay sutil para legibilidad de textos */}
+                    {/* Overlay sutil */}
                     <div className="absolute inset-0 bg-gradient-to-t from-artemisa-neutral/70 via-transparent to-transparent md:bg-gradient-to-r md:from-artemisa-neutral/80 md:via-artemisa-neutral/30 md:to-transparent" />
                   </div>
 
-                  {/* Tarjeta Informativa Adaptada para Mobile */}
+                  {/* Tarjeta Informativa Adaptada */}
                   {banner.title && (
                     <div className="absolute bottom-3 left-3 right-3 sm:bottom-6 sm:left-6 md:left-12 md:bottom-12 md:right-auto bg-artemisa-light/95 md:bg-artemisa-light/90 p-3 sm:p-5 md:p-8 rounded-xl md:rounded-2xl shadow-lg max-w-xs sm:max-w-md border border-artemisa-border/80 backdrop-blur-md transition-all">
                       <span className="text-artemisa-secondary text-[8px] sm:text-[10px] font-bold uppercase tracking-[0.2em] mb-0.5 sm:mb-1.5 block">
@@ -89,7 +94,7 @@ export const Hero = ({ offers }: HeroProps) => {
           </Swiper>
 
           {/* Flechas de Navegación (Solo en Desktop) */}
-          {offers.length > 1 && (
+          {safeOffers.length > 1 && (
             <div className="hidden md:block">
               <button className="hero-swiper-button-prev absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 bg-artemisa-light/90 hover:bg-artemisa-primary text-artemisa-primary hover:text-artemisa-light rounded-full flex items-center justify-center shadow-lg transition-all border border-artemisa-border opacity-0 group-hover/hero:opacity-100 cursor-pointer">
                 <ChevronLeft size={22} />
