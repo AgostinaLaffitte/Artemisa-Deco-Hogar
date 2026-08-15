@@ -18,9 +18,9 @@ export const TransferSuccess = () => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const transferData = {
-    cbu: '0000003100000000000000',
-    alias: 'artemisa.textil.mp',
-    titular: 'Artemisa Confecciones',
+    cbu: '0000003100005625606408',
+    alias: 'agostina.laffitte',
+    titular: 'Agostina Laffitte',
     banco: 'Mercado Pago'
   };
 
