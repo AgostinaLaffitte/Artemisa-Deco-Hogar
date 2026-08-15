@@ -1,12 +1,11 @@
-// src/pages/CheckoutSuccess.tsx
 import { useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
+import { CheckCircle2, Store, Sparkles, CreditCard } from 'lucide-react';
 
 export const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
   
-  // MP puede devolver 'external_reference' o tu backend 'orderId'
   const orderId = searchParams.get('orderId') || searchParams.get('external_reference');
   const paymentId = searchParams.get('payment_id');
   const { clearCart } = useCart();
@@ -17,29 +16,57 @@ export const CheckoutSuccess = () => {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto my-12 p-8 bg-white rounded-lg shadow-md text-center">
-      <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-      <h1 className="text-3xl font-bold text-gray-800 mb-2">¡Gracias por tu compra!</h1>
-      <p className="text-gray-600 mb-6">Tu pedido ha sido procesado con éxito.</p>
+    <div className="min-h-screen bg-artemisa-light/50 py-10 md:py-16 flex items-center justify-center p-4">
+      <div className="bg-white p-6 md:p-10 rounded-3xl border border-artemisa-border max-w-xl w-full space-y-8 shadow-sm text-center">
+        
+        {/* ENCABEZADO */}
+        <div className="space-y-3">
+          <div className="w-16 h-16 bg-artemisa-border/40 text-artemisa-primary rounded-full flex items-center justify-center mx-auto border border-artemisa-accent/30">
+            <CheckCircle2 size={36} className="text-artemisa-accent" />
+          </div>
 
-      {orderId && (
-        <div className="bg-gray-50 p-4 rounded-md mb-6 inline-block text-left border border-gray-200">
-          <p className="text-sm text-gray-600"><strong>Número de Orden:</strong> #{orderId}</p>
-          {paymentId && <p className="text-sm text-gray-600"><strong>ID de Pago (MP):</strong> {paymentId}</p>}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-artemisa-border/40 rounded-full text-artemisa-secondary text-[10px] uppercase tracking-widest font-semibold">
+            <Sparkles size={12} /> Compra Confirmada
+          </div>
+
+          <h1 className="text-2xl md:text-3xl font-serif font-bold text-artemisa-primary">
+            ¡Gracias por tu compra!
+          </h1>
+          
+          <p className="text-xs md:text-sm text-artemisa-secondary max-w-md mx-auto">
+            Tu pedido ha sido procesado con éxito. Ya comenzamos a prepararlo con la atención y dedicación artesanal de Artemisa.
+          </p>
         </div>
-      )}
 
-      <div>
-        <Link
-          to="/productos"
-          className="inline-block bg-indigo-600 text-white px-6 py-3 rounded-md font-semibold hover:bg-indigo-700 transition-colors"
-        >
-          Volver a la tienda
-        </Link>
+        {/* DETALLES DE TRANSACCIÓN */}
+        {orderId && (
+          <div className="bg-artemisa-light/80 border border-artemisa-border rounded-2xl p-4 space-y-1.5 text-left max-w-sm mx-auto">
+            <p className="text-xs text-artemisa-secondary flex justify-between items-center">
+              <span>Número de Orden:</span>
+              <strong className="text-artemisa-primary font-mono text-xs">#{orderId}</strong>
+            </p>
+            {paymentId && (
+              <p className="text-xs text-artemisa-secondary flex justify-between items-center border-t border-artemisa-border/60 pt-1.5">
+                <span className="flex items-center gap-1">
+                  <CreditCard size={12} className="text-artemisa-accent" /> ID de Pago (MP):
+                </span>
+                <span className="font-mono text-[11px] text-artemisa-neutral">{paymentId}</span>
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ACCIÓN PRINCIPAL */}
+        <div className="pt-2">
+          <Link
+            to="/productos"
+            className="w-full h-12 bg-artemisa-primary hover:bg-artemisa-neutral text-artemisa-light font-medium text-xs md:text-sm uppercase tracking-wider rounded-2xl shadow-md transition-all duration-300 flex items-center justify-center gap-2 border border-artemisa-accent/30 hover:scale-[1.01] active:scale-[0.99]"
+          >
+            <Store size={18} className="text-artemisa-accent" />
+            <span>Volver a la tienda</span>
+          </Link>
+        </div>
+
       </div>
     </div>
   );

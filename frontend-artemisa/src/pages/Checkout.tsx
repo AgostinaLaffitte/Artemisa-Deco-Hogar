@@ -1,24 +1,24 @@
 import { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { OrderService } from '../services/order.service';
 import { formatPrice } from '../utils/productUtils';
 import { ChevronLeft, Truck, Store, ShoppingBag, AlertCircle, CreditCard, Landmark } from 'lucide-react';
 
 export const Checkout = () => {
+  const navigate = useNavigate();
   const { 
     cart, 
     subtotalItems, 
     discountMayorista, 
     totalFinalPrice, 
-    alcanzoMayorista 
+    alcanzoMayorista,
+    clearCart // Nos aseguramos de tener la función para vaciar el carrito
   } = useCart();
   
- 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Nuevo estado para la opción de pago elegida
   const [paymentType, setPaymentType] = useState<'ALL' | 'TRANSFER'>('ALL');
 
   const [formData, setFormData] = useState({
@@ -42,7 +42,6 @@ export const Checkout = () => {
     return 7500; 
   }, [formData.deliveryMethod, formData.postalCode]);
 
-  // Cálculos de descuento por transferencia
   const baseTotal = totalFinalPrice + shippingCost;
   const transferDiscount = useMemo(() => {
     return paymentType === 'TRANSFER' ? baseTotal * 0.05 : 0;
@@ -64,50 +63,53 @@ export const Checkout = () => {
     );
   }
 
-const handleSubmitOrder = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
-  setErrorMessage(null);
+  const handleSubmitOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMessage(null);
 
-  try {
-    const itemsPayload = cart.map(item => ({
-      variantId: item.variantId,
-      quantity: item.quantity
-    }));
+    try {
+      const itemsPayload = cart.map(item => ({
+        variantId: item.variantId,
+        quantity: item.quantity
+      }));
 
-    const finalOrder = {
-      customerName: formData.customerName,
-      customerEmail: formData.customerEmail,
-      customerPhone: formData.customerPhone,
-      deliveryMethod: formData.deliveryMethod,
-      paymentMethod: 'MERCADOPAGO',
-      paymentType,
-      address: formData.deliveryMethod === 'RETIRO' ? '' : formData.address,
-      city: formData.deliveryMethod === 'RETIRO' ? '' : formData.city,
-      postalCode: formData.deliveryMethod === 'RETIRO' ? '' : formData.postalCode,
-      shippingCost,
-      items: itemsPayload
-    };
+      const finalOrder = {
+        customerName: formData.customerName,
+        customerEmail: formData.customerEmail,
+        customerPhone: formData.customerPhone,
+        deliveryMethod: formData.deliveryMethod,
+        paymentMethod: paymentType === 'TRANSFER' ? 'TRANSFERENCIA' : 'MERCADOPAGO',
+        paymentType,
+        address: formData.deliveryMethod === 'RETIRO' ? '' : formData.address,
+        city: formData.deliveryMethod === 'RETIRO' ? '' : formData.city,
+        postalCode: formData.deliveryMethod === 'RETIRO' ? '' : formData.postalCode,
+        shippingCost,
+        items: itemsPayload
+      };
 
-    const createdOrder = await OrderService.create(finalOrder);
+      const createdOrder = await OrderService.create(finalOrder);
 
-    const mpUrl = createdOrder.initPoint || createdOrder.sandbox_init_point;
-    
-    if (mpUrl) {
-      // Redirige directamente a la pasarela de Mercado Pago
-      window.location.href = mpUrl;
-    } else {
-      // Fallback sólo si no se generó link de MP por algún problema inesperado
-      setErrorMessage('No se pudo generar el enlace de pago de Mercado Pago.');
+      const mpUrl = createdOrder.initPoint || createdOrder.sandbox_init_point;
+      
+      if (mpUrl) {
+        // Redirige a Mercado Pago
+        window.location.href = mpUrl;
+      } else if (paymentType === 'TRANSFER') {
+        // Si fue por transferencia fuera de MP, limpiamos carrito y redirigimos a la vista de transferencia
+        if (clearCart) clearCart();
+        navigate(`/checkout/transferencia/${createdOrder.id}`, { state: { order: createdOrder } });
+      } else {
+        setErrorMessage('No se pudo procesar la solicitud de pago.');
+        setLoading(false);
+      }
+
+    } catch (error: any) {
+      console.error('Error al procesar la orden:', error);
+      setErrorMessage(error.response?.data?.message || 'Hubo un problema al procesar tu pedido.');
       setLoading(false);
     }
-
-  } catch (error: any) {
-    console.error('Error al procesar la orden:', error);
-    setErrorMessage(error.response?.data?.message || 'Hubo un problema al procesar tu pedido.');
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen bg-artemisa-light/50 py-6 md:py-12">
@@ -177,8 +179,8 @@ const handleSubmitOrder = async (e: React.FormEvent) => {
                   <input type="radio" name="paymentType" className="sr-only" checked={paymentType === 'ALL'} onChange={() => setPaymentType('ALL')} />
                   <CreditCard size={22} className="shrink-0" />
                   <div>
-                    <p className="text-xs font-bold uppercase">Tarjetas o Débito</p>
-                    <p className="text-[10px] opacity-80">Mercado Pago estándar</p>
+                    <p className="text-xs font-bold uppercase">Tarjetas / Mercado Pago</p>
+                    <p className="text-[10px] opacity-80">Pasarela Mercado Pago</p>
                   </div>
                 </label>
 
@@ -186,8 +188,8 @@ const handleSubmitOrder = async (e: React.FormEvent) => {
                   <input type="radio" name="paymentType" className="sr-only" checked={paymentType === 'TRANSFER'} onChange={() => setPaymentType('TRANSFER')} />
                   <Landmark size={22} className="shrink-0" />
                   <div>
-                    <p className="text-xs font-bold uppercase text-artemisa-accent">Transferencia (5% OFF)</p>
-                    <p className="text-[10px] opacity-80">Pagas por MP con CVU/CBU</p>
+                    <p className="text-xs font-bold uppercase text-artemisa-accent">Transferencia Directa (5% OFF)</p>
+                    <p className="text-[10px] opacity-80">Alias / CBU bancario</p>
                   </div>
                 </label>
               </div>
@@ -200,13 +202,21 @@ const handleSubmitOrder = async (e: React.FormEvent) => {
                 disabled={loading} 
                 className="w-full h-14 bg-artemisa-primary text-artemisa-light font-black uppercase rounded-2xl shadow-lg hover:bg-artemisa-secondary transition-all flex items-center justify-center gap-3 active:scale-[0.99]"
               >
-                <CreditCard size={20} />
-                <span>{loading ? 'Procesando pedido...' : 'Ir a Pagar'}</span>
+                {paymentType === 'TRANSFER' ? <Landmark size={20} /> : <CreditCard size={20} />}
+                <span>
+                  {loading 
+                    ? 'Procesando pedido...' 
+                    : (paymentType === 'TRANSFER' ? 'Confirmar Pedido por Transferencia' : 'Ir a Pagar en Mercado Pago')
+                  }
+                </span>
               </button>
 
               <div className="text-center space-y-1">
                 <p className="text-xs font-semibold text-artemisa-secondary">
-                  Serás redirigido a Mercado Pago para completar tu pago
+                  {paymentType === 'TRANSFER' 
+                    ? 'Te mostraremos los datos bancarios para realizar la transferencia'
+                    : 'Serás redirigido a Mercado Pago para completar tu pago'
+                  }
                 </p>
               </div>
             </div>
