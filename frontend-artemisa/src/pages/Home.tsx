@@ -32,23 +32,26 @@ export const Home = () => {
   }, []);
 
   // Mapeo dinámico de categorías basado en los productos existentes
-  const categoriesMap = new Map<number, { id: number; name: string; image: string }>();
+ const categoriesMap = new Map<number, { id: number; name: string; image: string }>();
 
+if (Array.isArray(products)) {
   products.forEach(product => {
-    product.categories?.forEach(cat => {
-      if (!categoriesMap.has(cat.id)) {
-        categoriesMap.set(cat.id, {
-          id: cat.id,
-          name: cat.name,
-          // Prioriza la imagen de la categoría; si no tiene, usa la del producto como fallback
-          image: cat.image || product.images?.[0] || '' 
-        });
-      }
-    });
+    // Validamos estrictamente que product.categories sea un Array
+    if (Array.isArray(product.categories)) {
+      product.categories.forEach(cat => {
+        if (cat && cat.id && !categoriesMap.has(cat.id)) {
+          categoriesMap.set(cat.id, {
+            id: cat.id,
+            name: cat.name,
+            image: cat.image || product.images?.[0] || '' 
+          });
+        }
+      });
+    }
   });
+}
 
-  const categories = Array.from(categoriesMap.values());
-
+const categories = Array.from(categoriesMap.values());
   if (loading) {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center bg-artemisa-light text-artemisa-primary gap-3">
