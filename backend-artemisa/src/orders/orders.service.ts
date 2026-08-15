@@ -63,8 +63,8 @@ export class OrdersService {
         const volumePromo = activePromos.find(
           p => p.productId === variant.productId && p.type === 'CANTIDAD' && totalProductQty >= p.minQuantity
         );
-
-        const categoryIds = variant.product.categories.map(c => c.id);
+        const categoriesList = Array.isArray(variant.product?.categories) ? variant.product.categories : [];
+        const categoryIds = categoriesList.map(c => c.id);
         const percentPromo = activePromos.find(
           p => p.type === 'PORCENTAJE' && (p.productId === variant.productId || categoryIds.includes(p.categoryId ?? -1))
         );
