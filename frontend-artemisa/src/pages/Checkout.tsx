@@ -98,7 +98,7 @@ export const Checkout = () => {
       } else if (paymentType === 'TRANSFER') {
         // Si fue por transferencia fuera de MP, limpiamos carrito y redirigimos a la vista de transferencia
         if (clearCart) clearCart();
-        navigate(`/checkout/transferencia/${createdOrder.id}`, { state: { order: createdOrder } });
+       navigate('/checkout/transfer-success', { state: { order: createdOrder } });
       } else {
         setErrorMessage('No se pudo procesar la solicitud de pago.');
         setLoading(false);
