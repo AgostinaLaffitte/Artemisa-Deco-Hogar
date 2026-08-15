@@ -142,26 +142,47 @@ export class OrdersService {
           },
         },
       });
+// src/services/orders.service.ts (Sección de Mercado Pago dentro de create())
 
       if (paymentMethod === 'MERCADOPAGO') {
         try {
-          // Tomamos variables de entorno dinámicas (con fallback local para desarrollo)
+          // Variables de entorno y URLs de retorno (esto ya funciona bien)
           const baseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-          const successUrl = `${baseUrl}/checkout/success?orderId=${order.id}`;
-          const failureUrl = `${baseUrl}/checkout/failure?orderId=${order.id}`;
-          const pendingUrl = `${baseUrl}/checkout/pending?orderId=${order.id}`;
+          const successUrl = `${baseUrl}/checkout/success`; // Simplificadas sin QueryParams, MP usa external_reference
+          const failureUrl = `${baseUrl}/checkout/failure`;
+          const pendingUrl = `${baseUrl}/checkout/pending`;
 
           const apiUrl = this.configService.get<string>('API_URL') || this.configService.get<string>('NGROK_URL') || 'http://localhost:3000';
           const cleanApiUrl = apiUrl.trim().replace(/\/+$/, '');
 
-          // Excluimos Tarjetas/Efectivo si seleccionó 'TRANSFER' para forzar transferencia bancaria en MP
-          const paymentMethodsConfig: any = {};
+          // --- INICIO DE LA CORRECCIÓN ---
+          
+          // Configuramos los métodos de pago. Definimos objetos vacíos por defecto.
+          let paymentMethodsConfig: any = {
+            excluded_payment_types: [], // Tipos a excluir (ej: 'credit_card')
+            excluded_payment_methods: [] // Métodos específicos a excluir (ej: 'visa', 'master')
+          };
+
           if (isTransfer) {
+            // SI ES TRANSFERENCIA: Excluimos TODO lo que no sea efectivo/transferencia.
+            // Para forzar la aparición de "Transferencia Bancaria" en el Checkout Pro,
+            // lo más seguro es excluir explícitamente tarjetas y tickets prepagos.
+
             paymentMethodsConfig.excluded_payment_types = [
               { id: 'credit_card' },
               { id: 'debit_card' },
-              { id: 'ticket' },
+              // { id: 'ticket' }, // A veces es necesario dejar 'ticket' para PagoFácil/Rapipago y que MP muestre la transferencia. Probamos excluyéndolo primero.
             ];
+
+            // OPCIONAL Y RECOMENDADO: Excluir métodos de pago específicos problemáticos.
+            // La foto muestra "Nueva tarjeta Prepaga". A veces el tipo 'prepaid_card' no se excluye bien.
+            // Podemos añadirlo aquí si MP tiene un ID para él en tu cuenta.
+            // Pero excluir 'credit_card' y 'debit_card' debería ser suficiente.
+
+          } else {
+            // SI ES "TODOS": Podríamos querer excluir métodos que no queremos.
+            // Por ejemplo, PagoFácil o Rapipago si solo quieres digital.
+            // paymentMethodsConfig.excluded_payment_types = [{ id: 'ticket' }];
           }
 
           const preference = new Preference(this.mpClient);
@@ -178,12 +199,26 @@ export class OrdersService {
                 failure: failureUrl,
                 pending: pendingUrl,
               },
-              payment_methods: paymentMethodsConfig,
+              
+              // --- CAMBIO IMPORTANTE AQUÍ ---
+              payment_methods: {
+                ...paymentMethodsConfig,
+                // OPCIONAL: Definir cuál queremos que sea el predeterminado.
+                // Si el usuario no está logueado, MP intentará usar transferencia.
+                // default_payment_method_id: 'redlink', // No recomendado forzar uno solo.
+              },
+              // --- FIN CAMBIO IMPORTANTE ---
+
               auto_return: 'approved',
               notification_url: `${cleanApiUrl}/orders/webhook`,
               external_reference: String(order.id),
+              
+              // OPCIONAL: Para mejorar la experiencia en móvil, podemos forzar un modo de apertura
+              // purpose: 'onboarding', // O 'multipurpose'
             },
           });
+
+          // --- FIN DE LA CORRECCIÓN ---
 
           const updatedOrder = await tx.order.update({
             where: { id: order.id },
