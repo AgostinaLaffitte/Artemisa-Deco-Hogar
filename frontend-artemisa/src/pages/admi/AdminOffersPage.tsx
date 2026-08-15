@@ -57,24 +57,44 @@ export const AdminOffersPage = () => {
     fetchInitialData();
   }, []);
 
-  const fetchInitialData = async () => {
-    try {
-      setLoading(true);
-      const [promosRes, productsRes, categoriesRes] = await Promise.all([
-        api.get('/promotions'),
-        api.get('/products'),
-        api.get('/categories')
-      ]);
-      setPromotions(promosRes.data);
-      setProducts(Array.isArray(productsRes.data) ? productsRes.data : []);
-      setCategories(categoriesRes.data);
-    } catch (error) {
-      console.error('Error al cargar datos iniciales:', error);
-      notify('Error al cargar los datos.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchInitialData = async () => {
+  try {
+    setLoading(true);
+    const [promosRes, productsRes, categoriesRes] = await Promise.all([
+      api.get('/promotions'),
+      api.get('/products'),
+      api.get('/categories')
+    ]);
+
+    // 🛡️ Protegemos todas las respuestas para asegurar que sean Arrays
+    setPromotions(
+      Array.isArray(promosRes.data) 
+        ? promosRes.data 
+        : (promosRes.data?.promotions || [])
+    );
+    
+    setProducts(
+      Array.isArray(productsRes.data) 
+        ? productsRes.data 
+        : (productsRes.data?.products || [])
+    );
+
+    setCategories(
+      Array.isArray(categoriesRes.data) 
+        ? categoriesRes.data 
+        : (categoriesRes.data?.categories || [])
+    );
+  } catch (error) {
+    console.error('Error al cargar datos iniciales:', error);
+    notify('Error al cargar los datos.', 'error');
+    // Fallback de seguridad ante un error de red/servidor
+    setPromotions([]);
+    setProducts([]);
+    setCategories([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleToggleActive = async (id: number, currentStatus: boolean) => {
     try {
