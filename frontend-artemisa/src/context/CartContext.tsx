@@ -39,11 +39,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     return savedCart ? JSON.parse(savedCart) : [];
   });
 
-  useEffect(() => {
-    api.get('/promotions')
-      .then(res => setPromotions(res.data.filter((p: Promotion) => p.active)))
-      .catch(err => console.error('Error al sincronizar promos:', err));
-  }, []);
+ useEffect(() => {
+  api.get('/promotions')
+    .then(res => {
+      // Validamos que res.data sea un Array. Si no lo es, buscamos si viene dentro de un objeto
+      let dataArray: Promotion[] = [];
+
+      if (Array.isArray(res.data)) {
+        dataArray = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        const possibleKey = Object.keys(res.data).find(key => Array.isArray(res.data[key]));
+        if (possibleKey) dataArray = res.data[possibleKey];
+      }
+
+      // Filtramos las promociones activas sobre un array seguro
+      setPromotions(dataArray.filter((p: Promotion) => p?.active));
+    })
+    .catch(err => {
+      console.error('Error al sincronizar promos:', err);
+      setPromotions([]); // Evita que la app colapse
+    });
+}, []);
 
   useEffect(() => {
     localStorage.setItem('aquiles_cart', JSON.stringify(cart));
