@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ConfigService } from '@nestjs/config';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
+import { MailService } from '../mail/mail.service';
 
 type CreateOrderInput = CreateOrderDto & { 
   paymentType?: 'ALL' | 'TRANSFER';
@@ -15,7 +16,8 @@ export class OrdersService {
 
   constructor(
     private prisma: PrismaService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private mailService: MailService
   ) {
     const accessToken = this.configService.get<string>('MP_ACCESS_TOKEN') || '';
     this.mpClient = new MercadoPagoConfig({ accessToken });
@@ -107,13 +109,15 @@ export class OrdersService {
         totalOrder = totalOrder * (1 - (wholesalePromo.discountValue / 100));
         
         const totalOriginal = itemsForMP.reduce((acc, i) => acc + (i.unit_price * i.quantity), 0);
-        const factorDescuento = totalOrder / totalOriginal;
-        itemsForMP.forEach(item => {
-          item.unit_price = Number((item.unit_price * factorDescuento).toFixed(2));
-        });
+        if (totalOriginal > 0) {
+          const factorDescuento = totalOrder / totalOriginal;
+          itemsForMP.forEach(item => {
+            item.unit_price = Number((item.unit_price * factorDescuento).toFixed(2));
+          });
+        }
       }
 
-      // Sumamos el envío al total antes del descuento por transferencia (o después, según tu lógica)
+      // Sumamos el envío al total de la orden
       if (shippingCost > 0) {
         totalOrder += shippingCost;
       }
@@ -150,59 +154,94 @@ export class OrdersService {
         },
       });
 
-      // Si NO es transferencia, creamos preferencia de Mercado Pago
-      if (!isTransfer) {
+      // Si es transferencia directa, enviar mail de confirmación inmediato
+      if (isTransfer) {
         try {
-          const baseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-          const successUrl = `${baseUrl}/checkout/success`;
-          const failureUrl = `${baseUrl}/checkout/failure`;
-          const pendingUrl = `${baseUrl}/checkout/pending`;
-
-          const apiUrl = this.configService.get<string>('API_URL') || this.configService.get<string>('NGROK_URL') || 'http://localhost:3000';
-          const cleanApiUrl = apiUrl.trim().replace(/\/+$/, '');
-
-          const preference = new Preference(this.mpClient);
-
-          const response = await preference.create({
-            body: {
-              items: itemsForMP,
-              payer: {
-                name: customerName,
-                email: customerEmail,
-              },
-              back_urls: {
-                success: successUrl,
-                failure: failureUrl,
-                pending: pendingUrl,
-              },
-              auto_return: 'approved',
-              notification_url: `${cleanApiUrl}/orders/webhook`,
-              external_reference: String(order.id),
-            },
-          });
-
-          const updatedOrder = await tx.order.update({
-            where: { id: order.id },
-            data: { preferenceId: response.id },
-            include: { items: { include: { product: true, variant: true } } },
-          });
-
-          return {
-            ...updatedOrder,
-            initPoint: response.init_point || response.sandbox_init_point,
-          };
-        } catch (error: any) {
-          console.error('Error de MP:', JSON.stringify(error?.response?.data || error?.message || error, null, 2));
-          throw new InternalServerErrorException('Error al inicializar el pago con Mercado Pago.');
+          await this.mailService.sendTransferInstructionsEmail(order);
+        } catch (err) {
+          console.error('Error enviando correo de instrucciones de transferencia:', err);
         }
+        return order;
       }
 
-      // Si es Transferencia directa fuera de MP
-      return order;
+      // Si NO es transferencia, creamos preferencia de Mercado Pago
+      try {
+        const baseUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+        const successUrl = `${baseUrl}/checkout/success`;
+        const failureUrl = `${baseUrl}/checkout/failure`;
+        const pendingUrl = `${baseUrl}/checkout/pending`;
+
+        const apiUrl = this.configService.get<string>('API_URL') || this.configService.get<string>('NGROK_URL') || 'http://localhost:3000';
+        const cleanApiUrl = apiUrl.trim().replace(/\/+$/, '');
+
+        const preference = new Preference(this.mpClient);
+
+        if (shippingCost > 0) {
+          itemsForMP.push({
+            id: 'shipping_cost',
+            title: 'Costo de Envío',
+            quantity: 1,
+            unit_price: Number(shippingCost.toFixed(2)),
+            currency_id: 'ARS',
+          });
+        }
+
+        const nameParts = (customerName || '').trim().split(' ');
+        const firstName = nameParts[0] || 'Cliente';
+        const lastName = nameParts.slice(1).join(' ') || 'Cliente';
+
+        const response = await preference.create({
+          body: {
+            items: itemsForMP,
+            payer: {
+              name: firstName,
+              surname: lastName,
+              email: customerEmail,
+              phone: {
+                number: customerPhone || '',
+              },
+              address: deliveryMethod === 'ENVIO' ? {
+                street_name: address || '',
+                zip_code: postalCode || '',
+              } : undefined,
+            },
+            shipments: deliveryMethod === 'ENVIO' ? {
+              receiver_address: {
+                zip_code: postalCode || '',
+                street_name: address || '',
+                city_name: city || '',
+              },
+            } : undefined,
+            back_urls: {
+              success: successUrl,
+              failure: failureUrl,
+              pending: pendingUrl,
+            },
+            auto_return: 'approved',
+            notification_url: `${cleanApiUrl}/orders/webhook`,
+            external_reference: String(order.id),
+            statement_descriptor: "ARTEMISA",
+          },
+        });
+
+        const updatedOrder = await tx.order.update({
+          where: { id: order.id },
+          data: { preferenceId: response.id },
+          include: { items: { include: { product: true, variant: true } } },
+        });
+
+        return {
+          ...updatedOrder,
+          initPoint: response.init_point || response.sandbox_init_point,
+        };
+      } catch (error: any) {
+        console.error('Error de MP:', JSON.stringify(error?.response?.data || error?.message || error, null, 2));
+        throw new InternalServerErrorException('Error al inicializar el pago con Mercado Pago.');
+      }
     });
   }
 
-  // Webhook Robusto (Procesa tanto Body como Query params)
+  // Webhook para notificaciones de Mercado Pago
   async handleWebhook(query: any, body: any) {
     try {
       const topic = query?.topic || query?.type || body?.type;
@@ -221,20 +260,26 @@ export class OrdersService {
           if (statusMP === 'rejected') orderStatus = 'CANCELADO';
 
           await this.prisma.$transaction(async (tx) => {
-            const order = await tx.order.findUnique({ where: { id: orderId } });
+            const order = await tx.order.findUnique({ 
+              where: { id: orderId },
+              include: { items: { include: { product: true, variant: true } } }
+            });
 
-            if (order) {
-              await tx.order.update({
+            if (order && order.status !== orderStatus) {
+              const previousStatus = order.status;
+
+              const updatedOrder = await tx.order.update({
                 where: { id: orderId },
                 data: {
                   paymentId: paymentId.toString(),
                   paymentStatus: statusMP,
                   status: orderStatus,
                 },
+                include: { items: { include: { product: true, variant: true } } }
               });
 
-              // Si el pago es rechazado y la orden no estaba cancelada previa, devolvemos el stock
-              if (statusMP === 'rejected' && order.status !== 'CANCELADO') {
+              // Si pasa a cancelado y antes no lo estaba, restituimos el stock
+              if (statusMP === 'rejected' && previousStatus !== 'CANCELADO') {
                 const items = await tx.orderItem.findMany({ where: { orderId } });
                 for (const item of items) {
                   if (item.variantId) {
@@ -245,6 +290,15 @@ export class OrdersService {
                   }
                 }
               }
+
+              // Enviar email si el pago fue aprobado
+              if (statusMP === 'approved') {
+                try {
+                  await this.mailService.sendOrderApprovedEmail(updatedOrder);
+                } catch (e) {
+                  console.error('Error enviando mail tras confirmación de pago:', e);
+                }
+              }
             }
           });
         }
@@ -252,7 +306,7 @@ export class OrdersService {
       return { received: true };
     } catch (error: any) {
       console.error('Error procesando Webhook de Mercado Pago:', error?.message || error);
-      return { received: true }; // Se devuelve 200 siempre para evitar reintentos continuos de MP
+      return { received: true }; 
     }
   }
 
