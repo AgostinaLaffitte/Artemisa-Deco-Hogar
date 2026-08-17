@@ -30,7 +30,8 @@ export class OrdersService {
       paymentType, shippingCost = 0 
     } = createOrderDto;
 
-    return this.prisma.$transaction(async (tx) => {
+    // 1. Ejecutamos la transacción en BD (rápida, no expira)
+    const transactionResult = await this.prisma.$transaction(async (tx) => {
       const activePromos = await tx.promotion.findMany({ where: { active: true } });
       let totalOrder = 0;
       const orderItemsData: any[] = [];
@@ -154,14 +155,8 @@ export class OrdersService {
         },
       });
 
-      // Si es transferencia directa, enviar mail de confirmación inmediato
       if (isTransfer) {
-        try {
-          await this.mailService.sendTransferInstructionsEmail(order);
-        } catch (err) {
-          console.error('Error enviando correo de instrucciones de transferencia:', err);
-        }
-        return order;
+        return { order, isTransfer: true };
       }
 
       // Si NO es transferencia, creamos preferencia de Mercado Pago
@@ -231,14 +226,26 @@ export class OrdersService {
         });
 
         return {
-          ...updatedOrder,
-          initPoint: response.init_point || response.sandbox_init_point,
+          order: {
+            ...updatedOrder,
+            initPoint: response.init_point || response.sandbox_init_point,
+          },
+          isTransfer: false,
         };
       } catch (error: any) {
         console.error('Error de MP:', JSON.stringify(error?.response?.data || error?.message || error, null, 2));
         throw new InternalServerErrorException('Error al inicializar el pago con Mercado Pago.');
       }
     });
+
+    // 2. Transacción de BD finalizada con éxito. Ahora enviamos el correo fuera de la transacción.
+    if (transactionResult.isTransfer) {
+      this.mailService.sendTransferInstructionsEmail(transactionResult.order).catch(err => {
+        console.error('Error enviando correo de instrucciones de transferencia:', err);
+      });
+    }
+
+    return transactionResult.order;
   }
 
   // Webhook para notificaciones de Mercado Pago
@@ -258,6 +265,8 @@ export class OrdersService {
           let orderStatus = 'PENDIENTE';
           if (statusMP === 'approved') orderStatus = 'PAGADO';
           if (statusMP === 'rejected') orderStatus = 'CANCELADO';
+
+          let updatedOrderToSendEmail: any = null;
 
           await this.prisma.$transaction(async (tx) => {
             const order = await tx.order.findUnique({ 
@@ -291,16 +300,18 @@ export class OrdersService {
                 }
               }
 
-              // Enviar email si el pago fue aprobado
               if (statusMP === 'approved') {
-                try {
-                  await this.mailService.sendOrderApprovedEmail(updatedOrder);
-                } catch (e) {
-                  console.error('Error enviando mail tras confirmación de pago:', e);
-                }
+                updatedOrderToSendEmail = updatedOrder;
               }
             }
           });
+
+          // Envío de correo fuera de la transacción de Prisma
+          if (updatedOrderToSendEmail) {
+            this.mailService.sendOrderApprovedEmail(updatedOrderToSendEmail).catch(e => {
+              console.error('Error enviando mail tras confirmación de pago:', e);
+            });
+          }
         }
       }
       return { received: true };

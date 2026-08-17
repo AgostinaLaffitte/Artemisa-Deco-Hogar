@@ -8,15 +8,18 @@ export class MailService {
   private logger = new Logger(MailService.name);
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get<string>('SMTP_HOST') || 'smtp.gmail.com',
-      port: Number(this.configService.get<number>('SMTP_PORT')) || 587,
-      secure: false, // true para puerto 465, false para otros
+   this.transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465, // Usamos 465 en vez de 587 para SSL directo
+      secure: true, // true para 465
       auth: {
-        user: this.configService.get<string>('SMTP_USER'),
-        pass: this.configService.get<string>('SMTP_PASS'),
+        user: this.configService.get<string>('SMTP_USER') || this.configService.get<string>('MAIL_USER'),
+        pass: this.configService.get<string>('SMTP_PASS') || this.configService.get<string>('MAIL_PASS'),
       },
-    });
+      // 🚀 FORZAMOS IPv4 para evitar el error ENETUNREACH en Render
+      family: 4, 
+      connectionTimeout: 10000, // Timeout de 10 segundos para no congelar el servidor
+    } as any);
   }
 
   // 📧 Email 1: Confirmación de Pago Aprobado (Mercado Pago)
