@@ -5,11 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import { MailService } from '../mail/mail.service';
 
-type CreateOrderInput = CreateOrderDto & { 
-  paymentType?: 'ALL' | 'TRANSFER';
-  shippingCost?: number;
-};
-
 @Injectable()
 export class OrdersService {
   private mpClient: MercadoPagoConfig;
@@ -23,9 +18,9 @@ export class OrdersService {
     this.mpClient = new MercadoPagoConfig({ accessToken });
   }
 
-  async create(createOrderDto: CreateOrderInput) {
+  async create(createOrderDto: CreateOrderDto) {
     const { 
-      items, customerName, customerEmail, customerPhone, 
+      items, customerName, customerEmail, customerPhone, customerDni,
       deliveryMethod, address, city, postalCode, notes, 
       paymentType, shippingCost = 0 
     } = createOrderDto;
@@ -184,6 +179,8 @@ export class OrdersService {
         const nameParts = (customerName || '').trim().split(' ');
         const firstName = nameParts[0] || 'Cliente';
         const lastName = nameParts.slice(1).join(' ') || 'Cliente';
+        const cleanPhone = customerPhone ? customerPhone.replace(/\D/g, '') : '';
+        const cleanDni = customerDni ? customerDni.replace(/\D/g, '') : '';
 
         const response = await preference.create({
           body: {
@@ -193,8 +190,12 @@ export class OrdersService {
               surname: lastName,
               email: customerEmail,
               phone: {
-                number: customerPhone || '',
+                number: cleanPhone,
               },
+              identification: cleanDni ? {
+                type: 'DNI',
+                number: cleanDni,
+              } : undefined,
               address: deliveryMethod === 'ENVIO' ? {
                 street_name: address || '',
                 zip_code: postalCode || '',
@@ -238,7 +239,7 @@ export class OrdersService {
       }
     });
 
-    // 2. Transacción de BD finalizada con éxito. Ahora enviamos el correo fuera de la transacción.
+    // 2. Transacción de BD finalizada con éxito. Enviamos el correo fuera de la transacción.
     if (transactionResult.isTransfer) {
       this.mailService.sendTransferInstructionsEmail(transactionResult.order).catch(err => {
         console.error('Error enviando correo de instrucciones de transferencia:', err);

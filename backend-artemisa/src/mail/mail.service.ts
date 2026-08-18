@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import dns from 'dns';
+dns.setDefaultResultOrder('ipv4first');
+
 
 @Injectable()
 export class MailService {

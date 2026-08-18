@@ -1,4 +1,3 @@
-// src/orders/dto/create-order.dto.ts
 import { IsArray, IsNumber, IsNotEmpty, IsString, IsEmail, IsOptional, ValidateNested, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -26,6 +25,10 @@ export class CreateOrderDto {
   customerPhone!: string;
 
   @IsString()
+  @IsOptional()
+  customerDni?: string; // 👈 Campo nuevo agregado para scoring antifraude en MP
+
+  @IsString()
   @IsIn(['RETIRO', 'ENVIO'])
   deliveryMethod!: string;
 
@@ -45,19 +48,21 @@ export class CreateOrderDto {
   @IsOptional()
   notes?: string;
 
-  // Cambia esto en tu DTO:
   @IsString()
-  @IsOptional() // Lo hacemos opcional porque ahora lo asignamos nosotros
+  @IsOptional()
   paymentMethod?: string;
 
   @IsString()
   @IsOptional()
   @IsIn(['ALL', 'TRANSFER'])
   paymentType?: 'ALL' | 'TRANSFER';
-  
+
+  @IsNumber()
+  @IsOptional()
+  shippingCost?: number; // 👈 Agregado al DTO principal
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items!: OrderItemDto[];
-
 }

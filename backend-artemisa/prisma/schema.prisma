@@ -7,6 +7,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model Product {
@@ -63,12 +64,14 @@ model Order {
   customerName    String
   customerEmail   String
   customerPhone   String
+  customerDni     String?
   
   // Datos de Entrega / Envío
   deliveryMethod  String      // "RETIRO" o "ENVIO"
   address         String?     // Calle, Número, Piso (Opcional si es retiro)
   city            String?     // Localidad
   postalCode      String?     
+  shippingCost    Float?
   notes           String?     // Notas aclaratorias del cliente
 
   // Control Financiero y Estados
