@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { OrderService } from '../services/order.service';
 import { formatPrice } from '../utils/productUtils';
+import api from '../api/axiosConfig';
 import { ChevronLeft, Truck, Store, ShoppingBag, AlertCircle, CreditCard, Landmark } from 'lucide-react';
 
 export const Checkout = () => {
@@ -19,6 +20,7 @@ export const Checkout = () => {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [paymentType, setPaymentType] = useState<'ALL' | 'TRANSFER'>('ALL');
+ 
 
   // Script de Seguridad de Mercado Pago (Antifraude)
   useEffect(() => {
@@ -45,16 +47,42 @@ export const Checkout = () => {
     postalCode: '',
     notes: '',
   });
+  const [shippingCost, setShippingCost] = useState<number>(0);
+  const [calculatingShipping, setCalculatingShipping] = useState<boolean>(false);
 
-  const shippingCost = useMemo(() => {
-    if (formData.deliveryMethod === 'RETIRO') return 0;
-    const cp = parseInt(formData.postalCode.trim(), 10);
-    if (isNaN(cp) || cp <= 0) return 0;
+  // 🔄 NUEVO EFECTO: Consulta el costo real al backend cuando cambia el CP
+  useEffect(() => {
+    const fetchShipping = async () => {
+      if (formData.deliveryMethod === 'RETIRO') {
+        setShippingCost(0);
+        return;
+      }
 
-    if (cp === 7400 || cp === 6550) return 3000; 
-    if ((cp >= 1000 && cp <= 1999) || (cp >= 6000 && cp <= 7999)) return 5500; 
-    return 7500; 
-  }, [formData.deliveryMethod, formData.postalCode]);
+      const cp = formData.postalCode.trim();
+      if (cp.length < 4) { // Espera a que al menos escriba 4 dígitos
+        setShippingCost(0);
+        return;
+      }
+
+      try {
+        setCalculatingShipping(true);
+        // Llamada a tu nuevo endpoint del backend
+        const { data } = await api.post('/shipping/calculate', { postalCode: cp });
+        setShippingCost(data.cost || 0);
+      } catch (error) {
+        console.error('Error al calcular envío:', error);
+        setShippingCost(5500); // Valor de respaldo por si falla la red
+      } finally {
+        setCalculatingShipping(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchShipping();
+    }, 500); // Espera 0.5s a que termine de escribir para no saturar peticiones
+
+    return () => clearTimeout(timer);
+  }, [formData.postalCode, formData.deliveryMethod]);
 
   const baseTotal = totalFinalPrice + shippingCost;
   const transferDiscount = useMemo(() => {
@@ -62,6 +90,8 @@ export const Checkout = () => {
   }, [paymentType, baseTotal]);
 
   const grandTotal = baseTotal - transferDiscount;
+
+  
 
   if (cart.length === 0) {
     return (
@@ -321,12 +351,16 @@ export const Checkout = () => {
                 </div>
               )}
 
-              <div className="flex justify-between font-medium text-artemisa-neutral gap-2">
-                <span className="truncate">Costo de Envío</span>
-                <span className="shrink-0">
-                  {formData.deliveryMethod === 'RETIRO' ? 'GRATIS' : (shippingCost > 0 ? formatPrice(shippingCost) : 'Ingresá tu CP')}
-                </span>
-              </div>
+             <div className="flex justify-between font-medium text-artemisa-neutral gap-2">
+              <span className="truncate">Costo de Envío</span>
+              <span className="shrink-0">
+                {formData.deliveryMethod === 'RETIRO' 
+                  ? 'GRATIS' 
+                  : (calculatingShipping 
+                      ? 'Calculando...' 
+                      : (shippingCost > 0 ? formatPrice(shippingCost) : 'Ingresá tu CP'))}
+              </span>
+            </div>
 
               {paymentType === 'TRANSFER' && (
                 <div className="text-artemisa-accent font-bold flex justify-between bg-artemisa-light p-2.5 rounded-xl gap-2 text-xs sm:text-sm">

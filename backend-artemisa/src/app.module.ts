@@ -11,9 +11,10 @@ import { OrdersModule } from './orders/orders.module';
 import { BannersModule } from './banners/banners.module';
 import { AuthModule } from './auth/auth.module';
 import { PromotionsModule } from './promotions/promotions.module';
+import { ShippingModule } from './shipping/shipping.module';
 @Module({
  
-  imports: [ConfigModule.forRoot({ isGlobal: true}),PrismaModule,PromotionsModule, ProductsModule, CategoriesModule, VariantsModule, OrdersModule, BannersModule, AuthModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true}),PrismaModule,PromotionsModule, ProductsModule, CategoriesModule, VariantsModule, OrdersModule, BannersModule, AuthModule, ShippingModule,],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
