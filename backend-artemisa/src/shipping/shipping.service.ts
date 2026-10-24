@@ -1,17 +1,19 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service'; // 👈 Importamos Prisma
 
 @Injectable()
 export class ShippingService {
   private token: string | null = null;
   private tokenExpiration: number = 0;
 
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService // 👈 Inyectamos Prisma para buscar pesos
+  ) {}
 
   private async getToken(): Promise<string> {
     const now = Date.now();
-    
-    // Si ya tenemos token y no expiró, lo usamos
     if (this.token && now < this.tokenExpiration) {
       return this.token;
     }
@@ -43,9 +45,8 @@ export class ShippingService {
       }
 
       this.token = fetchedToken;
-      this.tokenExpiration = now + (55 * 60 * 1000); // 55 minutos corregido
+      this.tokenExpiration = now + (55 * 60 * 1000); 
       
-      // Retornamos la variable local asegurando que es un string y evitando el error de TS
       return fetchedToken;
     } catch (error: any) {
       console.error('Error obteniendo token de Correo Argentino:', error.message);
@@ -53,7 +54,28 @@ export class ShippingService {
     }
   }
 
-  async calculateRate(destinationPostalCode: string, weightInKg: number = 1) {
+  // 📦 Método actualizado para calcular el peso real según los productos del carrito
+  async calculateRate(destinationPostalCode: string, items?: { variantId: number; quantity: number }[]) {
+    let totalWeightInKg = 1.0; // Peso por defecto si no vienen ítems
+
+    if (items && items.length > 0) {
+      totalWeightInKg = 0;
+      for (const item of items) {
+        const variant = await this.prisma.productVariant.findUnique({
+          where: { id: item.variantId },
+        });
+        
+        // Si la variante tiene peso cargado, lo usa; si es null, toma 1 kg por defecto
+        const itemWeight = variant?.weight ?? 1.0;
+        totalWeightInKg += itemWeight * item.quantity;
+      }
+    }
+
+    // Aseguramos un peso mínimo de 0.5 kg para evitar errores en la API
+    if (totalWeightInKg <= 0) {
+      totalWeightInKg = 1.0;
+    }
+
     const token = await this.getToken();
     const baseUrl = this.configService.get<string>('CORREO_API_URL') || 'https://api.correoargentino.com.ar/micorreo/v1';
     const originPostalCode = this.configService.get<string>('ORIGIN_POSTAL_CODE') || '7400';
@@ -68,7 +90,7 @@ export class ShippingService {
         body: JSON.stringify({
           postal_code_source: originPostalCode,
           postal_code_destiny: destinationPostalCode,
-          weight: weightInKg,
+          weight: totalWeightInKg, // 👈 Enviamos el peso total real calculado
         }),
       });
 
@@ -77,7 +99,7 @@ export class ShippingService {
       }
 
       const data: any = await response.json();
-      return { cost: data.price || data.total || 0 };
+      return { cost: data.price || data.total || 0, calculatedWeight: totalWeightInKg };
     } catch (error: any) {
       console.error('Error calculando tarifa de envío:', error.message);
       return { cost: 5500 }; 
