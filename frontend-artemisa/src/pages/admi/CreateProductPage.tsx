@@ -34,7 +34,7 @@ export const CreateProductPage = () => {
     addVariant,
     removeVariant,
     changeVariant,
-  } = useProductForm([{ name: '', stock: 1, price: null, images: [], files: [] }]);
+  } = useProductForm([{ name: '', stock: 1, price: null, weight: 1.0, images: [], files: [] }]);
 
   useEffect(() => {
     api.get('/categories')
@@ -80,6 +80,7 @@ export const CreateProductPage = () => {
           stock: Number(variant.stock),
           price: variant.price ? Number(variant.price) : null,
           images: variant.images || [],
+          weight: variant.weight ? Number(variant.weight) : 1.0,
         };
       });
 

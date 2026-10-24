@@ -26,7 +26,8 @@ export class ProductsService {
             price: variant.price ? Number(variant.price) : null,
             size: variant.size || null,
             color: variant.color || null,
-            images: variant.images || [], // <--- Guardar array de fotos/videos de la variante
+            images: variant.images || [],
+            weight: variant.weight ? Number(variant.weight) : 1.0, // <--- Guardar array de fotos/videos de la variante
           })),
         },
       },
@@ -89,7 +90,8 @@ export class ProductsService {
               price: variant.price ? Number(variant.price) : null,
               size: variant.size || null,
               color: variant.color || null,
-              images: variant.images || [], // <--- Recrear variantes asociando sus imágenes/videos
+              images: variant.images || [],
+              weight: variant.weight ? Number(variant.weight) : 1.0, // <--- Recrear variantes asociando sus imágenes/videos
             })),
           },
         } : {}),

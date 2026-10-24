@@ -66,8 +66,18 @@ export const Checkout = () => {
 
       try {
         setCalculatingShipping(true);
-        // Llamada a tu nuevo endpoint del backend
-        const { data } = await api.post('/shipping/calculate', { postalCode: cp });
+        
+        // 👇 MODIFICAMOS AQUÍ para enviar los ítems del carrito
+        const itemsPayload = cart.map(item => ({
+          variantId: item.variantId,
+          quantity: item.quantity
+        }));
+
+        const { data } = await api.post('/shipping/calculate', { 
+          postalCode: cp,
+          items: itemsPayload 
+        });
+        
         setShippingCost(data.cost || 0);
       } catch (error) {
         console.error('Error al calcular envío:', error);

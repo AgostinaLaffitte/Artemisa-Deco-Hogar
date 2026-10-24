@@ -7,7 +7,8 @@ export interface LocalVariant {
   price: number | null;
   size?: string;
   color?: string;
-  images: string[];     // URLs de imágenes/videos existentes o ya subidos
+  images: string[];   
+  weight?: number;  // URLs de imágenes/videos existentes o ya subidos
   files?: File[];       // Nuevos archivos de la variante a subir al backend
 }
 
@@ -90,7 +91,7 @@ export const VariantMatrix = ({
               )}
             </div>
 
-            {/* Stock y Precio */}
+            {/* Stock y Precio y peso */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1">Stock Disponible</label>
@@ -111,6 +112,18 @@ export const VariantMatrix = ({
                   placeholder="Dejar vacío si aplica precio base"
                   value={variant.price || ''}
                   onChange={(e) => onVariantChange(index, 'price', e.target.value ? +e.target.value : null)}
+                  className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-sm font-bold text-artemisa-primary outline-none focus:border-artemisa-secondary"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-artemisa-secondary uppercase mb-1">Peso (kg) *</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  placeholder="Ej: 0.5 o 15"
+                  value={variant.weight ?? 1.0}
+                  onChange={(e) => onVariantChange(index, 'weight', e.target.value ? +e.target.value : 1.0)}
                   className="w-full bg-artemisa-light border border-artemisa-border rounded-lg py-2.5 px-3 text-sm font-bold text-artemisa-primary outline-none focus:border-artemisa-secondary"
                 />
               </div>

@@ -43,6 +43,8 @@ export class CreateProductDto {
   @IsArray()
   @IsNumber({}, { each: true })
   categories?: number[];
+  
+  weight?: number;
 
   @IsOptional()
   @Transform(({ value }) => {

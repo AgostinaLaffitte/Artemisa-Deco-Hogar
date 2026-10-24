@@ -72,11 +72,12 @@ export const UpdateProductPage = () => {
             name: v.name,
             stock: v.stock,
             price: v.price,
+             weight: v.weight ?? 1.0, // 👈 NUEVO: Recuperamos el peso de la base de datos
             images: v.images || (v.image ? [v.image] : []),
             files: [],
           })));
         } else {
-          setVariants([{ name: '', stock: 1, price: null, images: [], files: [] }]);
+          setVariants([{ name: '', stock: 1, price: null, weight: 1.0,images: [], files: [] }]);
         }
       } catch {
         setStatus({ type: 'error', message: 'Error al recuperar los datos del servidor.' });
@@ -117,6 +118,7 @@ export const UpdateProductPage = () => {
           name: variant.name.trim(),
           stock: Number(variant.stock),
           price: variant.price ? Number(variant.price) : null,
+          weight: variant.weight ? Number(variant.weight) : 1.0,
           images: variant.images || [],
         };
       });
